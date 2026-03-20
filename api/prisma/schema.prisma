@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum BusinessType {
+  AUTO_ENTREPRENEUR
+  EI
+  EIRL
+  EURL
+  SARL
+  SAS
+  SASU
+  SA
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum ExpenseCategory {
+  OFFICE_SUPPLIES
+  TRAVEL
+  MEALS
+  EQUIPMENT
+  SOFTWARE
+  MARKETING
+  PROFESSIONAL_FEES
+  RENT
+  UTILITIES
+  INSURANCE
+  TAXES
+  SALARY
+  OTHER
+}
+
+enum TaxReportStatus {
+  DRAFT
+  SUBMITTED
+  VALIDATED
+}
+
+enum TaxReportType {
+  TVA
+  IS
+  IR
+  URSSAF
+  CFE
+  OTHER
+}
+
+enum NotificationType {
+  INVOICE_DUE
+  INVOICE_PAID
+  TAX_DEADLINE
+  EXPENSE_REMINDER
+  SYSTEM
+  AI_INSIGHT
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+  INACTIVE
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  name         String?
+  avatarUrl    String?
+  role         UserRole  @default(USER)
+  isVerified   Boolean   @default(false)
+  refreshToken String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  business      Business?
+  notifications Notification[]
+  chatMessages  ChatMessage[]
+  subscription  Subscription?
+
+  @@map("users")
+}
+
+model Business {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  name        String
+  siret       String?      @unique
+  siren       String?      @unique
+  vatNumber   String?
+  type        BusinessType @default(AUTO_ENTREPRENEUR)
+  address     String?
+  city        String?
+  postalCode  String?
+  country     String       @default("FR")
+  phone       String?
+  website     String?
+  logoUrl     String?
+  iban        String?
+  bic         String?
+  revenueGoal Float?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clients      Client[]
+  invoices     Invoice[]
+  transactions Transaction[]
+  expenses     Expense[]
+  taxReports   TaxReport[]
+
+  @@map("businesses")
+}
+
+model Client {
+  id         String   @id @default(uuid())
+  businessId String
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+  city       String?
+  postalCode String?
+  country    String   @default("FR")
+  siret      String?
+  vatNumber  String?
+  notes      String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@map("clients")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  businessId    String
+  clientId      String?
+  number        String
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  paidAt        DateTime?
+  subtotal      Float         @default(0)
+  vatRate       Float         @default(0)
+  vatAmount     Float         @default(0)
+  total         Float         @default(0)
+  notes         String?
+  paymentTerms  String?
+  pdfUrl        String?
+  stripeId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client       Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  items        InvoiceItem[]
+  transactions Transaction[]
+
+  @@unique([businessId, number])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float
+  vatRate     Float   @default(0)
+  total       Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  businessId  String
+  invoiceId   String?
+  type        TransactionType
+  amount      Float
+  description String?
+  date        DateTime        @default(now())
+  category    String?
+  reference   String?
+  bankAccount String?
+  isReconciled Boolean        @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoice  Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  businessId  String
+  category    ExpenseCategory @default(OTHER)
+  amount      Float
+  vatAmount   Float           @default(0)
+  description String?
+  date        DateTime        @default(now())
+  receiptUrl  String?
+  supplier    String?
+  isDeductible Boolean        @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
+}
+
+model TaxReport {
+  id          String          @id @default(uuid())
+  businessId  String
+  type        TaxReportType
+  status      TaxReportStatus @default(DRAFT)
+  periodStart DateTime
+  periodEnd   DateTime
+  dueDate     DateTime?
+  submittedAt DateTime?
+  amount      Float           @default(0)
+  details     Json?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("tax_reports")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String   // "user" | "assistant"
+  content   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(INACTIVE)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  trialEndsAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
