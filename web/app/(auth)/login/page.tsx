@@ -91,12 +91,13 @@ export default function LoginPage() {
 
           {/* Tabs */}
           <div className="flex mb-7" style={{ borderBottom: '0.5px solid #E5E4E0' }}>
-            <span
+            <Link
+              href="/register"
               className="pb-2.5 mr-5 text-[14px] font-medium"
               style={{ color: '#888780', borderBottom: '2px solid transparent' }}
             >
               Créer un compte
-            </span>
+            </Link>
             <span
               className="pb-2.5 text-[14px] font-medium"
               style={{ color: '#185FA5', borderBottom: '2px solid #378ADD' }}

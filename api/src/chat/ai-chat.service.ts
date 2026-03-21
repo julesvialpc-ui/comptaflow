@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ChatService } from './chat.service';
 import { AI_CHAT_TOOLS } from './ai-chat.tools';
 
-const MODEL = 'claude-opus-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 16000;
 const HISTORY_LIMIT = 40; // last 40 messages for context
 
