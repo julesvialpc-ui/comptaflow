@@ -23,6 +23,7 @@ import {
   apiDeleteCategoryBudget,
 } from '@/lib/category-budgets';
 import { eur } from '@/lib/format';
+import { apiCreateCheckout, apiCreatePortal } from '@/lib/subscriptions';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -38,24 +39,22 @@ const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'OTHER', label: 'Autre' },
 ];
 
-const PLAN_META: Record<string, { label: string; color: string; features: string[] }> = {
+const PLAN_META: Record<string, { label: string; price: string; color: string; features: string[] }> = {
   FREE: {
     label: 'Gratuit',
+    price: '0 €/mois',
     color: 'bg-zinc-100 text-zinc-700 border-zinc-200',
     features: ['5 factures / mois', '10 clients', 'Dashboard basique', 'Export PDF'],
   },
-  STARTER: {
-    label: 'Starter',
-    color: 'bg-blue-100 text-blue-700 border-blue-200',
-    features: ['50 factures / mois', 'Clients illimités', 'Rapports fiscaux', 'Assistant IA (limité)'],
-  },
   PRO: {
     label: 'Pro',
+    price: '9 €/mois',
     color: 'bg-[#E6F1FB] text-[#378ADD] border-[#378ADD]',
     features: ['Factures illimitées', 'Assistant IA complet', 'Multi-utilisateurs (2)', 'Support prioritaire'],
   },
   BUSINESS: {
     label: 'Business',
+    price: '19 €/mois',
     color: 'bg-purple-100 text-purple-700 border-purple-200',
     features: ['Tout Pro +', 'Multi-utilisateurs illimité', 'API access', 'Gestionnaire dédié'],
   },
@@ -464,12 +463,39 @@ function BusinessTab({ token }: { token: string }) {
 function SubscriptionTab({ token }: { token: string }) {
   const [sub, setSub] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
     apiGetProfile(token).then((p) => {
       setSub(p.subscription ?? null);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
+
+  async function handleCheckout(plan: 'PRO' | 'BUSINESS') {
+    setCheckoutLoading(plan);
+    setAlert(null);
+    try {
+      const { url } = await apiCreateCheckout(token, plan);
+      window.location.href = url;
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur lors de la redirection vers le paiement.' });
+      setCheckoutLoading(null);
+    }
+  }
+
+  async function handlePortal() {
+    setPortalLoading(true);
+    setAlert(null);
+    try {
+      const { url } = await apiCreatePortal(token);
+      window.location.href = url;
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur lors de la redirection vers le portail.' });
+      setPortalLoading(false);
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center gap-2 text-sm text-zinc-400">
@@ -480,23 +506,31 @@ function SubscriptionTab({ token }: { token: string }) {
 
   const plan = sub?.plan ?? 'FREE';
   const meta = PLAN_META[plan] ?? PLAN_META.FREE;
-
-  const UPGRADE_PLANS = (['STARTER', 'PRO', 'BUSINESS'] as const).filter((p) => p !== plan);
+  const isPaid = plan === 'PRO' || plan === 'BUSINESS';
+  const UPGRADE_PLANS = (['PRO', 'BUSINESS'] as const).filter((p) => p !== plan);
 
   return (
     <div className="max-w-2xl space-y-6">
+      {alert && <Alert type={alert.type} message={alert.msg} onClose={() => setAlert(null)} />}
+
       {/* Current plan */}
       <div>
         <SectionTitle>Plan actuel</SectionTitle>
         <div className="rounded-xl border border-zinc-200 bg-white p-5 flex items-start justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold border ${meta.color}`}>
                 {meta.label}
               </span>
+              <span className="text-xs text-zinc-400">{meta.price}</span>
               {sub?.status === 'TRIALING' && (
                 <span className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5">
-                  Période d'essai
+                  Période d&apos;essai
+                </span>
+              )}
+              {sub?.status === 'PAST_DUE' && (
+                <span className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-full px-2 py-0.5">
+                  Paiement en retard
                 </span>
               )}
             </div>
@@ -512,11 +546,22 @@ function SubscriptionTab({ token }: { token: string }) {
             </ul>
             {sub?.currentPeriodEnd && (
               <p className="mt-3 text-xs text-zinc-400">
-                Renouvellement le {new Date(sub.currentPeriodEnd).toLocaleDateString('fr-FR')}
-                {sub.cancelAtPeriodEnd && ' · Annulation prévue'}
+                {sub.cancelAtPeriodEnd
+                  ? `Annulation prévue le ${new Date(sub.currentPeriodEnd).toLocaleDateString('fr-FR')}`
+                  : `Renouvellement le ${new Date(sub.currentPeriodEnd).toLocaleDateString('fr-FR')}`}
               </p>
             )}
           </div>
+          {isPaid && (
+            <button
+              onClick={handlePortal}
+              disabled={portalLoading}
+              className="flex-shrink-0 flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition"
+            >
+              {portalLoading && <span className="h-3 w-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />}
+              Gérer l&apos;abonnement
+            </button>
+          )}
         </div>
       </div>
 
@@ -524,14 +569,18 @@ function SubscriptionTab({ token }: { token: string }) {
       {UPGRADE_PLANS.length > 0 && (
         <div>
           <SectionTitle>Mettre à niveau</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {UPGRADE_PLANS.map((p) => {
               const m = PLAN_META[p];
+              const isLoading = checkoutLoading === p;
               return (
                 <div key={p} className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col gap-3">
-                  <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold border ${m.color}`}>
-                    {m.label}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold border ${m.color}`}>
+                      {m.label}
+                    </span>
+                    <span className="text-sm font-semibold text-zinc-700">{m.price}</span>
+                  </div>
                   <ul className="space-y-1 flex-1">
                     {m.features.map((f) => (
                       <li key={f} className="flex items-center gap-2 text-xs text-zinc-500">
@@ -543,11 +592,14 @@ function SubscriptionTab({ token }: { token: string }) {
                     ))}
                   </ul>
                   <button
-                    disabled
-                    className="w-full rounded-lg border border-zinc-200 py-1.5 text-xs font-medium text-zinc-400 cursor-not-allowed"
+                    onClick={() => handleCheckout(p)}
+                    disabled={!!checkoutLoading}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#378ADD] py-2 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
-                    Bientôt disponible
+                    {isLoading && <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                    Passer au plan {m.label}
                   </button>
+                  <p className="text-center text-[10px] text-zinc-400">Sans engagement · Annulez à tout moment</p>
                 </div>
               );
             })}

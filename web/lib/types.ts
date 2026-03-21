@@ -300,7 +300,7 @@ export interface Business {
   updatedAt: string;
 }
 
-export type SubscriptionPlan = 'FREE' | 'STARTER' | 'PRO' | 'BUSINESS';
+export type SubscriptionPlan = 'FREE' | 'PRO' | 'BUSINESS';
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'TRIALING' | 'INACTIVE';
 
 export interface Subscription {

@@ -1,8 +1,9 @@
-import { Controller, Get, Patch, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { Public } from '../auth/decorators/public.decorator';
+import { StripeWebhookGuard } from './stripe-webhook.guard';
 
 @Controller('subscriptions')
 export class SubscriptionsController {
@@ -13,8 +14,23 @@ export class SubscriptionsController {
     return this.subscriptionsService.findByUser(user.id);
   }
 
-  @Patch('me')
-  updateMine(@Body() dto: UpdateSubscriptionDto, @CurrentUser() user: AuthUser) {
-    return this.subscriptionsService.update(user.id, dto);
+  @Post('checkout')
+  createCheckout(
+    @Body() body: { plan: 'PRO' | 'BUSINESS' },
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.subscriptionsService.createCheckoutSession(user.id, body.plan);
+  }
+
+  @Post('portal')
+  createPortal(@CurrentUser() user: AuthUser) {
+    return this.subscriptionsService.createPortalSession(user.id);
+  }
+
+  @Public()
+  @UseGuards(StripeWebhookGuard)
+  @Post('webhook')
+  handleWebhook(@Req() req: Request & { stripeEvent: any }) {
+    return this.subscriptionsService.handleWebhook(req.stripeEvent);
   }
 }

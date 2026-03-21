@@ -110,7 +110,6 @@ enum NotificationType {
 
 enum SubscriptionPlan {
   FREE
-  STARTER
   PRO
   BUSINESS
 }
@@ -468,6 +467,7 @@ model Subscription {
   status               SubscriptionStatus @default(INACTIVE)
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
+  stripePriceId        String?
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
