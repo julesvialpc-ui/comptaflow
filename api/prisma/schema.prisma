@@ -65,6 +65,13 @@ enum RevenueCategory {
   OTHER
 }
 
+enum RecurrenceInterval {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+}
+
 enum TaxReportStatus {
   DRAFT
   SUBMITTED
@@ -150,13 +157,14 @@ model Business {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clients      Client[]
-  invoices     Invoice[]
-  transactions Transaction[]
-  expenses     Expense[]
-  taxReports   TaxReport[]
-  revenues     Revenue[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clients        Client[]
+  invoices       Invoice[]
+  transactions   Transaction[]
+  expenses       Expense[]
+  taxReports     TaxReport[]
+  revenues       Revenue[]
+  userCategories UserCategory[]
 
   @@map("businesses")
 }
@@ -250,39 +258,65 @@ model Transaction {
 }
 
 model Expense {
-  id          String          @id @default(uuid())
-  businessId  String
-  category    ExpenseCategory @default(OTHER)
-  amount      Float
-  vatAmount   Float           @default(0)
-  description String?
-  date        DateTime        @default(now())
-  receiptUrl  String?
-  supplier    String?
-  isDeductible Boolean        @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id                 String              @id @default(uuid())
+  businessId         String
+  category           ExpenseCategory     @default(OTHER)
+  amount             Float
+  vatAmount          Float               @default(0)
+  description        String?
+  date               DateTime            @default(now())
+  receiptUrl         String?
+  supplier           String?
+  isDeductible       Boolean             @default(true)
+  isRecurring        Boolean             @default(false)
+  recurrenceInterval RecurrenceInterval?
+  userCategoryId     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userCategory UserCategory? @relation(fields: [userCategoryId], references: [id], onDelete: SetNull)
 
   @@map("expenses")
 }
 
 model Revenue {
-  id          String          @id @default(uuid())
-  businessId  String
-  category    RevenueCategory @default(SERVICES)
-  amount      Float
-  vatAmount   Float           @default(0)
-  description String?
-  date        DateTime        @default(now())
-  clientName  String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id                 String              @id @default(uuid())
+  businessId         String
+  category           RevenueCategory     @default(SERVICES)
+  amount             Float
+  vatAmount          Float               @default(0)
+  description        String?
+  date               DateTime            @default(now())
+  clientName         String?
+  isRecurring        Boolean             @default(false)
+  recurrenceInterval RecurrenceInterval?
+  userCategoryId     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userCategory UserCategory? @relation(fields: [userCategoryId], references: [id], onDelete: SetNull)
 
   @@map("revenues")
+}
+
+model UserCategory {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  slug       String
+  color      String   @default("#378ADD")
+  type       String   // "EXPENSE" or "REVENUE"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+  revenues Revenue[]
+
+  @@unique([businessId, slug, type])
+  @@map("user_categories")
 }
 
 model TaxReport {

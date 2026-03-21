@@ -1,4 +1,4 @@
-import { RevenueCategory } from '@prisma/client';
+import { RevenueCategory, RecurrenceInterval } from '@prisma/client';
 
 export class UpdateRevenueDto {
   category?: RevenueCategory;
@@ -7,4 +7,7 @@ export class UpdateRevenueDto {
   description?: string;
   date?: Date;
   clientName?: string;
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval;
+  userCategoryId?: string | null;
 }

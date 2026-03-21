@@ -64,6 +64,19 @@ export type ExpenseCategory =
   | 'MARKETING' | 'PROFESSIONAL_FEES' | 'RENT' | 'UTILITIES'
   | 'INSURANCE' | 'TAXES' | 'SALARY' | 'OTHER';
 
+export type RecurrenceInterval = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUAL';
+
+export interface UserCategory {
+  id: string;
+  businessId: string;
+  name: string;
+  slug: string;
+  color: string;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Expense {
   id: string;
   category: ExpenseCategory;
@@ -74,6 +87,10 @@ export interface Expense {
   receiptUrl: string | null;
   supplier: string | null;
   isDeductible: boolean;
+  isRecurring: boolean;
+  recurrenceInterval: RecurrenceInterval | null;
+  userCategoryId: string | null;
+  userCategory: { name: string; color: string } | null;
   createdAt: string;
 }
 
@@ -98,6 +115,10 @@ export interface Revenue {
   description: string | null;
   date: string;
   clientName: string | null;
+  isRecurring: boolean;
+  recurrenceInterval: RecurrenceInterval | null;
+  userCategoryId: string | null;
+  userCategory: { name: string; color: string } | null;
   createdAt: string;
 }
 
@@ -218,6 +239,24 @@ export interface ExpenseCategoryData {
   category: string;
   amount: number;
   percentage: number;
+  color?: string;
+}
+
+export interface UrssafQuarter {
+  quarter: string;
+  label: string;
+  revenue: number;
+  urssafEstimate: number;
+}
+
+export interface UrssafData {
+  currentQuarterRevenue: number;
+  urssafEstimate: number;
+  quarter: string;
+  periodLabel: string;
+  declarationDeadline: string;
+  daysUntilDeadline: number;
+  previousQuarters: UrssafQuarter[];
 }
 
 export interface DashboardData {

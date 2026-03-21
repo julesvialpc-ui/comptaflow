@@ -64,7 +64,11 @@
       "Bash(grep -rn \"Compta\\\\|ComptaFlow\" /Users/julesvial/Documents/comptaflow/web --include=*.tsx --include=*.ts)",
       "Bash(lsof -ti:3001)",
       "Bash(lsof -ti:3000)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(PGPASSWORD=secret123 psql -U comptaflow -d comptaflow -h localhost -c \"SELECT email FROM \\\\\"User\\\\\" LIMIT 5;\" 2>&1)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZThkMGY4Mi00MzIyLTQwMjgtOWFlNC1lOWZmNzI4Yjc1YjIiLCJlbWFpbCI6ImRlbW9Aa29udGEuZnIiLCJpYXQiOjE3NzQwOTI3MzYsImV4cCI6MTc3NDA5MzYzNn0.lnHK_35AN5FSvVuILORFhjq7BPZnCdWU3EyYGOiDgwY\" __NEW_LINE_c3619da95a1d2835__ curl -s http://localhost:3001/api/dashboard -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZThkMGY4Mi00MzIyLTQwMjgtOWFlNC1lOWZmNzI4Yjc1YjIiLCJlbWFpbCI6ImRlbW9Aa29udGEuZnIiLCJpYXQiOjE3NzQwOTI3MzYsImV4cCI6MTc3NDA5MzYzNn0.lnHK_35AN5FSvVuILORFhjq7BPZnCdWU3EyYGOiDgwY\" __NEW_LINE_4e57c0e950fd7b9b__ curl -s http://localhost:3001/api/dashboard -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

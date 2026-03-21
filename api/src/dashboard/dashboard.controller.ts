@@ -12,4 +12,10 @@ export class DashboardController {
     if (!user.businessId) throw new ForbiddenException('No business associated');
     return this.dashboardService.getStats(user.businessId);
   }
+
+  @Get('urssaf')
+  getUrssaf(@CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.dashboardService.getUrssaf(user.businessId);
+  }
 }

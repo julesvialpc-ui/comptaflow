@@ -49,8 +49,8 @@ export function RevenuePieChart({ data }: RevenuePieChartProps) {
             paddingAngle={3}
             dataKey="amount"
           >
-            {chartData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            {chartData.map((entry, i) => (
+              <Cell key={i} fill={entry.color ?? COLORS[i % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip

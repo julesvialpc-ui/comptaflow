@@ -38,6 +38,7 @@ export class ExpensesService {
           },
         }),
       },
+      include: { userCategory: { select: { name: true, color: true } } },
       orderBy: { date: 'desc' },
     });
   }
@@ -80,7 +81,10 @@ export class ExpensesService {
   // ── Single ────────────────────────────────────────────────────────────────
 
   async findOne(id: string, businessId: string) {
-    const expense = await this.prisma.expense.findFirst({ where: { id, businessId } });
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, businessId },
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
     if (!expense) throw new NotFoundException(`Expense ${id} not found`);
     return expense;
   }
@@ -89,14 +93,27 @@ export class ExpensesService {
 
   create(dto: CreateExpenseDto, businessId: string) {
     const date = dto.date ? new Date(dto.date as unknown as string) : new Date();
-    return this.prisma.expense.create({ data: { ...dto, date, businessId } });
+    const { userCategoryId, ...rest } = dto;
+    return this.prisma.expense.create({
+      data: {
+        ...rest,
+        date,
+        businessId,
+        ...(userCategoryId ? { userCategoryId } : {}),
+      },
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
   }
 
   // ── Update ────────────────────────────────────────────────────────────────
 
   async update(id: string, businessId: string, dto: UpdateExpenseDto) {
     await this.findOne(id, businessId);
-    return this.prisma.expense.update({ where: { id }, data: dto });
+    return this.prisma.expense.update({
+      where: { id },
+      data: dto,
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
   }
 
   // ── Remove ────────────────────────────────────────────────────────────────

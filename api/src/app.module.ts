@@ -16,6 +16,7 @@ import { TaxReportsModule } from './tax-reports/tax-reports.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { UserCategoriesModule } from './user-categories/user-categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -34,6 +35,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     NotificationsModule,
     ChatModule,
     SubscriptionsModule,
+    UserCategoriesModule,
   ],
   controllers: [AppController],
   providers: [

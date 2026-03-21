@@ -1,5 +1,5 @@
 import { authFetch } from './auth';
-import { Revenue, RevenueStats, RevenueCategory } from './types';
+import { Revenue, RevenueStats, RevenueCategory, RecurrenceInterval } from './types';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -21,6 +21,9 @@ export interface RevenuePayload {
   description?: string;
   clientName?: string;
   date?: string;
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval | null;
+  userCategoryId?: string | null;
 }
 
 export async function apiGetRevenues(token: string, filters: RevenueFilters = {}): Promise<Revenue[]> {

@@ -11,6 +11,7 @@ import { FinancialPieChart } from './components/FinancialPieChart';
 import { InvoiceTable } from './components/InvoiceTable';
 import { TaxDeadlines } from './components/TaxDeadlines';
 import { ThresholdAlert } from './components/ThresholdAlert';
+import { UrssafWidget } from './components/UrssafWidget';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 
@@ -150,9 +151,10 @@ export default function DashboardClient() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <InvoiceTable invoices={recentInvoices} />
         <TaxDeadlines deadlines={taxDeadlines} />
+        <UrssafWidget />
       </div>
     </div>
   );

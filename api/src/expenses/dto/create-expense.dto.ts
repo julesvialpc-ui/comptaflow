@@ -1,4 +1,4 @@
-import { ExpenseCategory } from '@prisma/client';
+import { ExpenseCategory, RecurrenceInterval } from '@prisma/client';
 
 export class CreateExpenseDto {
   category?: ExpenseCategory;
@@ -9,4 +9,7 @@ export class CreateExpenseDto {
   receiptUrl?: string;
   supplier?: string;
   isDeductible?: boolean;
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval;
+  userCategoryId?: string;
 }

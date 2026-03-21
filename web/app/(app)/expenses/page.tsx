@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Expense, ExpenseCategory, ExpenseStats } from '@/lib/types';
+import { Expense, ExpenseCategory, ExpenseStats, RecurrenceInterval, UserCategory } from '@/lib/types';
 import {
   apiGetExpenses,
   apiGetExpenseStats,
@@ -11,6 +11,7 @@ import {
   apiDeleteExpense,
   ExpensePayload,
 } from '@/lib/expenses';
+import { apiGetUserCategories } from '@/lib/user-categories';
 import { eur } from '@/lib/format';
 
 // ─── Category config ──────────────────────────────────────────────────────────
@@ -32,6 +33,13 @@ const CAT: Record<ExpenseCategory, { label: string; color: string }> = {
 };
 
 const CATEGORIES = Object.keys(CAT) as ExpenseCategory[];
+
+const RECURRENCE_LABELS: Record<RecurrenceInterval, string> = {
+  WEEKLY:      'Hebdomadaire',
+  MONTHLY:     'Mensuel',
+  QUARTERLY:   'Trimestriel',
+  SEMI_ANNUAL: 'Semestriel',
+};
 
 // ─── Category VAT rates ───────────────────────────────────────────────────────
 
@@ -77,35 +85,47 @@ function yearRange() {
 
 // ─── Slide-over form ──────────────────────────────────────────────────────────
 
-type SliderState = { mode: 'create' } | { mode: 'edit'; expense: Expense };
-
 interface ExpenseFormProps {
   initial?: Expense;
   onSave: (payload: ExpensePayload) => Promise<void>;
   onClose: () => void;
   businessIsVatSubject: boolean;
+  userCategories: UserCategory[];
 }
 
-function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: ExpenseFormProps) {
-  const [category, setCategory]     = useState<ExpenseCategory>(initial?.category ?? 'OTHER');
-  const [ttcInput, setTtcInput]     = useState(
+function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject, userCategories }: ExpenseFormProps) {
+  // 'BUILTIN:CATEGORY_KEY' or 'CUSTOM:id'
+  const getInitialSelection = () => {
+    if (initial?.userCategoryId) return `CUSTOM:${initial.userCategoryId}`;
+    return `BUILTIN:${initial?.category ?? 'OTHER'}`;
+  };
+
+  const [selection, setSelection]       = useState(getInitialSelection());
+  const [ttcInput, setTtcInput]         = useState(
     initial ? String(Math.round((initial.amount + initial.vatAmount) * 100) / 100) : '',
   );
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [supplier, setSupplier]     = useState(initial?.supplier ?? '');
-  const [date, setDate]             = useState(
+  const [description, setDescription]  = useState(initial?.description ?? '');
+  const [supplier, setSupplier]         = useState(initial?.supplier ?? '');
+  const [date, setDate]                 = useState(
     initial ? initial.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
   );
   const [isDeductible, setIsDeductible] = useState(initial?.isDeductible ?? true);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+  const [isRecurring, setIsRecurring]   = useState(initial?.isRecurring ?? false);
+  const [recurrenceInterval, setRecurrenceInterval] = useState<RecurrenceInterval>(
+    initial?.recurrenceInterval ?? 'MONTHLY',
+  );
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
+
+  const isCustom = selection.startsWith('CUSTOM:');
+  const builtinCategory = isCustom ? 'OTHER' : (selection.replace('BUILTIN:', '') as ExpenseCategory);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     const ttc = parseFloat(ttcInput);
     if (!ttc || ttc <= 0) { setError('Montant invalide.'); return; }
-    const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[category] : 0;
+    const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[builtinCategory] : 0;
     const ht = vatRate > 0 ? ttc / (1 + vatRate) : ttc;
     const tva = Math.round((ttc - ht) * 100) / 100;
     const htRounded = Math.round(ht * 100) / 100;
@@ -113,13 +133,16 @@ function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: Expense
     setLoading(true);
     try {
       await onSave({
-        category,
+        category: builtinCategory,
         amount: htRounded,
         vatAmount: tva,
         description: description.trim() || undefined,
         supplier:    supplier.trim()    || undefined,
         date:        date               || undefined,
         isDeductible,
+        isRecurring,
+        recurrenceInterval: isRecurring ? recurrenceInterval : null,
+        userCategoryId: isCustom ? selection.replace('CUSTOM:', '') : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement.');
@@ -153,12 +176,29 @@ function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: Expense
         {/* Category */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-zinc-500">Catégorie</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-            className={inputCls}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{CAT[c].label}</option>
-            ))}
+          <select value={selection} onChange={(e) => setSelection(e.target.value)} className={inputCls}>
+            {userCategories.length > 0 && (
+              <optgroup label="Mes catégories">
+                {userCategories.map((uc) => (
+                  <option key={uc.id} value={`CUSTOM:${uc.id}`}>{uc.name}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Catégories standard">
+              {CATEGORIES.map((c) => (
+                <option key={c} value={`BUILTIN:${c}`}>{CAT[c].label}</option>
+              ))}
+            </optgroup>
           </select>
+          {isCustom && (() => {
+            const uc = userCategories.find(u => u.id === selection.replace('CUSTOM:', ''));
+            return uc ? (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-block h-3 w-3 rounded-full" style={{ background: uc.color }} />
+                <span className="text-xs text-zinc-500">{uc.name}</span>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* TTC input */}
@@ -174,7 +214,7 @@ function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: Expense
           <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-2.5 space-y-1.5">
             {(() => {
               const ttc = parseFloat(ttcInput) || 0;
-              const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[category] : 0;
+              const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[builtinCategory] : 0;
               const ht = vatRate > 0 ? ttc / (1 + vatRate) : ttc;
               const tva = ttc - ht;
               return (
@@ -222,6 +262,28 @@ function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: Expense
             <p className="text-xs text-zinc-400">Incluse dans vos charges déductibles</p>
           </div>
         </label>
+
+        {/* Recurring */}
+        <label className="flex items-center gap-3 cursor-pointer rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 hover:bg-zinc-100 transition">
+          <input type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300 text-[#378ADD] focus:ring-[#E6F1FB]" />
+          <div>
+            <p className="text-sm font-medium text-zinc-700">Dépense récurrente</p>
+            <p className="text-xs text-zinc-400">Se répète régulièrement</p>
+          </div>
+        </label>
+
+        {isRecurring && (
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-zinc-500">Fréquence</label>
+            <select value={recurrenceInterval} onChange={(e) => setRecurrenceInterval(e.target.value as RecurrenceInterval)}
+              className={inputCls}>
+              {(Object.keys(RECURRENCE_LABELS) as RecurrenceInterval[]).map((r) => (
+                <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -247,6 +309,7 @@ export default function ExpensesPage() {
   const [stats, setStats] = useState<ExpenseStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVatSubject, setIsVatSubject] = useState(false);
+  const [userCategories, setUserCategories] = useState<UserCategory[]>([]);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -258,7 +321,7 @@ export default function ExpensesPage() {
   const [slider, setSlider] = useState<{ mode: 'create' } | { mode: 'edit'; expense: Expense } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Fetch business VAT settings
+  // Fetch business VAT settings + user categories
   useEffect(() => {
     const t = tok();
     if (!t) return;
@@ -268,6 +331,8 @@ export default function ExpensesPage() {
       .then(r => r.ok ? r.json() : null)
       .then(biz => { if (biz) setIsVatSubject(biz.isVatSubject ?? false); })
       .catch(() => {});
+
+    apiGetUserCategories(t, 'EXPENSE').then(setUserCategories).catch(() => {});
   }, []);
 
   // Debounce search
@@ -341,6 +406,17 @@ export default function ExpensesPage() {
   const deductible = expenses.filter((e) => e.isDeductible).reduce((s, e) => s + e.amount, 0);
 
   const periodLabel = period === 'month' ? 'ce mois' : period === 'year' ? 'cette année' : 'toutes périodes';
+
+  // Helper to display category label for an expense
+  function getCatLabel(exp: Expense): string {
+    if (exp.userCategory) return exp.userCategory.name;
+    return CAT[exp.category]?.label ?? exp.category;
+  }
+
+  function getCatColor(exp: Expense): string {
+    if (exp.userCategory) return exp.userCategory.color;
+    return '';
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -467,17 +543,31 @@ export default function ExpensesPage() {
                   <tr key={exp.id} className="group hover:bg-zinc-50 transition">
                     <td className="py-3 pl-5 pr-3 text-zinc-500 tabular-nums">{fmtDate(exp.date)}</td>
                     <td className="px-3 py-3">
-                      <div>
-                        <p className="font-medium text-zinc-800">
-                          {exp.description || <span className="text-zinc-400 italic">—</span>}
-                        </p>
-                        {exp.supplier && <p className="text-xs text-zinc-400">{exp.supplier}</p>}
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="font-medium text-zinc-800">
+                            {exp.description || <span className="text-zinc-400 italic">—</span>}
+                          </p>
+                          {exp.supplier && <p className="text-xs text-zinc-400">{exp.supplier}</p>}
+                        </div>
+                        {exp.isRecurring && (
+                          <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                            {exp.recurrenceInterval ? RECURRENCE_LABELS[exp.recurrenceInterval] : 'Récurrent'}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CAT[exp.category].color}`}>
-                        {CAT[exp.category].label}
-                      </span>
+                      {exp.userCategory ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-700">
+                          <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: getCatColor(exp) }} />
+                          {getCatLabel(exp)}
+                        </span>
+                      ) : (
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CAT[exp.category].color}`}>
+                          {CAT[exp.category].label}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-zinc-900 tabular-nums">
                       {eur(exp.amount)}
@@ -583,6 +673,7 @@ export default function ExpensesPage() {
             onSave={handleSave}
             onClose={() => setSlider(null)}
             businessIsVatSubject={isVatSubject}
+            userCategories={userCategories}
           />
         )}
       </div>

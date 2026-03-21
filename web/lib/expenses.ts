@@ -1,4 +1,4 @@
-import { Expense, ExpenseCategory, ExpenseStats } from './types';
+import { Expense, ExpenseCategory, ExpenseStats, RecurrenceInterval } from './types';
 import { authFetch } from './auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
@@ -23,6 +23,9 @@ export interface ExpensePayload {
   date?: string;
   supplier?: string;
   isDeductible?: boolean;
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval | null;
+  userCategoryId?: string | null;
 }
 
 export async function apiGetExpenses(token: string, filters: ExpenseFilters = {}): Promise<Expense[]> {

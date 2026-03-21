@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Revenue, RevenueCategory, RevenueStats } from '@/lib/types';
+import { Revenue, RevenueCategory, RevenueStats, RecurrenceInterval, UserCategory } from '@/lib/types';
 import {
   apiGetRevenues,
   apiGetRevenueStats,
@@ -11,6 +11,7 @@ import {
   apiDeleteRevenue,
   RevenuePayload,
 } from '@/lib/revenues';
+import { apiGetUserCategories } from '@/lib/user-categories';
 import { eur } from '@/lib/format';
 
 // ─── Category config ──────────────────────────────────────────────────────────
@@ -26,6 +27,13 @@ const CAT: Record<RevenueCategory, { label: string; color: string }> = {
 };
 
 const CATEGORIES = Object.keys(CAT) as RevenueCategory[];
+
+const RECURRENCE_LABELS: Record<RecurrenceInterval, string> = {
+  WEEKLY:      'Hebdomadaire',
+  MONTHLY:     'Mensuel',
+  QUARTERLY:   'Trimestriel',
+  SEMI_ANNUAL: 'Semestriel',
+};
 
 function tok() {
   return typeof window !== 'undefined' ? (localStorage.getItem('accessToken') ?? '') : '';
@@ -53,20 +61,32 @@ interface RevenueFormProps {
   initial?: Revenue;
   onSave: (payload: RevenuePayload) => Promise<void>;
   onClose: () => void;
+  userCategories: UserCategory[];
 }
 
-function RevenueForm({ initial, onSave, onClose }: RevenueFormProps) {
-  const [category, setCategory]       = useState<RevenueCategory>(initial?.category ?? 'SERVICES');
-  const [amount, setAmount]           = useState(initial ? String(initial.amount) : '');
-  const [vatAmount, setVatAmount]     = useState(initial ? String(initial.vatAmount) : '0');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [clientName, setClientName]   = useState(initial?.clientName ?? '');
-  const [date, setDate]               = useState(
+function RevenueForm({ initial, onSave, onClose, userCategories }: RevenueFormProps) {
+  const getInitialSelection = () => {
+    if (initial?.userCategoryId) return `CUSTOM:${initial.userCategoryId}`;
+    return `BUILTIN:${initial?.category ?? 'SERVICES'}`;
+  };
+
+  const [selection, setSelection]         = useState(getInitialSelection());
+  const [amount, setAmount]               = useState(initial ? String(initial.amount) : '');
+  const [vatAmount, setVatAmount]         = useState(initial ? String(initial.vatAmount) : '0');
+  const [description, setDescription]     = useState(initial?.description ?? '');
+  const [clientName, setClientName]       = useState(initial?.clientName ?? '');
+  const [date, setDate]                   = useState(
     initial ? initial.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
+  );
+  const [isRecurring, setIsRecurring]     = useState(initial?.isRecurring ?? false);
+  const [recurrenceInterval, setRecurrenceInterval] = useState<RecurrenceInterval>(
+    initial?.recurrenceInterval ?? 'MONTHLY',
   );
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
+  const isCustom = selection.startsWith('CUSTOM:');
+  const builtinCategory = isCustom ? 'SERVICES' : (selection.replace('BUILTIN:', '') as RevenueCategory);
   const ttc = (parseFloat(amount) || 0) + (parseFloat(vatAmount) || 0);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -77,12 +97,15 @@ function RevenueForm({ initial, onSave, onClose }: RevenueFormProps) {
     setLoading(true);
     try {
       await onSave({
-        category,
+        category: builtinCategory,
         amount: amt,
         vatAmount: parseFloat(vatAmount) || 0,
         description: description.trim() || undefined,
         clientName:  clientName.trim()  || undefined,
         date:        date               || undefined,
+        isRecurring,
+        recurrenceInterval: isRecurring ? recurrenceInterval : null,
+        userCategoryId: isCustom ? selection.replace('CUSTOM:', '') : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement.');
@@ -111,9 +134,27 @@ function RevenueForm({ initial, onSave, onClose }: RevenueFormProps) {
 
         <div className="space-y-1">
           <label className="block text-xs font-medium text-zinc-500">Catégorie</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value as RevenueCategory)} className={inputCls}>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{CAT[c].label}</option>)}
+          <select value={selection} onChange={(e) => setSelection(e.target.value)} className={inputCls}>
+            {userCategories.length > 0 && (
+              <optgroup label="Mes catégories">
+                {userCategories.map((uc) => (
+                  <option key={uc.id} value={`CUSTOM:${uc.id}`}>{uc.name}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Catégories standard">
+              {CATEGORIES.map((c) => <option key={c} value={`BUILTIN:${c}`}>{CAT[c].label}</option>)}
+            </optgroup>
           </select>
+          {isCustom && (() => {
+            const uc = userCategories.find(u => u.id === selection.replace('CUSTOM:', ''));
+            return uc ? (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-block h-3 w-3 rounded-full" style={{ background: uc.color }} />
+                <span className="text-xs text-zinc-500">{uc.name}</span>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -154,6 +195,28 @@ function RevenueForm({ initial, onSave, onClose }: RevenueFormProps) {
             placeholder="Détails du revenu…"
             className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
         </div>
+
+        {/* Recurring */}
+        <label className="flex items-center gap-3 cursor-pointer rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 hover:bg-zinc-100 transition">
+          <input type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300 text-[#378ADD] focus:ring-[#E6F1FB]" />
+          <div>
+            <p className="text-sm font-medium text-zinc-700">Revenu récurrent</p>
+            <p className="text-xs text-zinc-400">Se répète régulièrement</p>
+          </div>
+        </label>
+
+        {isRecurring && (
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-zinc-500">Fréquence</label>
+            <select value={recurrenceInterval} onChange={(e) => setRecurrenceInterval(e.target.value as RecurrenceInterval)}
+              className={inputCls}>
+              {(Object.keys(RECURRENCE_LABELS) as RecurrenceInterval[]).map((r) => (
+                <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-zinc-100 px-5 py-4 flex gap-3">
@@ -183,6 +246,13 @@ export default function RevenuesPage() {
   const [period, setPeriod]       = useState<'month' | 'year' | 'all'>('month');
   const [slider, setSlider]       = useState<{ mode: 'create' } | { mode: 'edit'; revenue: Revenue } | null>(null);
   const [deleting, setDeleting]   = useState<string | null>(null);
+  const [userCategories, setUserCategories] = useState<UserCategory[]>([]);
+
+  useEffect(() => {
+    const t = tok();
+    if (!t) return;
+    apiGetUserCategories(t, 'REVENUE').then(setUserCategories).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -362,17 +432,31 @@ export default function RevenuesPage() {
                   <tr key={rev.id} className="group hover:bg-zinc-50 transition">
                     <td className="py-3 pl-5 pr-3 text-zinc-500 tabular-nums">{fmtDate(rev.date)}</td>
                     <td className="px-3 py-3">
-                      <div>
-                        <p className="font-medium text-zinc-800">
-                          {rev.description || <span className="text-zinc-400 italic">—</span>}
-                        </p>
-                        {rev.clientName && <p className="text-xs text-zinc-400">{rev.clientName}</p>}
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="font-medium text-zinc-800">
+                            {rev.description || <span className="text-zinc-400 italic">—</span>}
+                          </p>
+                          {rev.clientName && <p className="text-xs text-zinc-400">{rev.clientName}</p>}
+                        </div>
+                        {rev.isRecurring && (
+                          <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                            {rev.recurrenceInterval ? RECURRENCE_LABELS[rev.recurrenceInterval] : 'Récurrent'}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CAT[rev.category].color}`}>
-                        {CAT[rev.category].label}
-                      </span>
+                      {rev.userCategory ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-700">
+                          <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: rev.userCategory.color }} />
+                          {rev.userCategory.name}
+                        </span>
+                      ) : (
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CAT[rev.category].color}`}>
+                          {CAT[rev.category].label}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-zinc-900 tabular-nums">{eur(rev.amount)}</td>
                     <td className="px-3 py-3 text-right text-zinc-500 tabular-nums">
@@ -439,6 +523,7 @@ export default function RevenuesPage() {
             initial={slider.mode === 'edit' ? slider.revenue : undefined}
             onSave={handleSave}
             onClose={() => setSlider(null)}
+            userCategories={userCategories}
           />
         )}
       </div>

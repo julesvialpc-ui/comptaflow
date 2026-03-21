@@ -34,6 +34,7 @@ export class RevenuesService {
           },
         }),
       },
+      include: { userCategory: { select: { name: true, color: true } } },
       orderBy: { date: 'desc' },
     });
   }
@@ -72,19 +73,35 @@ export class RevenuesService {
   }
 
   async findOne(id: string, businessId: string) {
-    const revenue = await this.prisma.revenue.findFirst({ where: { id, businessId } });
+    const revenue = await this.prisma.revenue.findFirst({
+      where: { id, businessId },
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
     if (!revenue) throw new NotFoundException(`Revenue ${id} not found`);
     return revenue;
   }
 
   create(dto: CreateRevenueDto, businessId: string) {
     const date = dto.date ? new Date(dto.date as unknown as string) : new Date();
-    return this.prisma.revenue.create({ data: { ...dto, date, businessId } });
+    const { userCategoryId, ...rest } = dto;
+    return this.prisma.revenue.create({
+      data: {
+        ...rest,
+        date,
+        businessId,
+        ...(userCategoryId ? { userCategoryId } : {}),
+      },
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
   }
 
   async update(id: string, businessId: string, dto: UpdateRevenueDto) {
     await this.findOne(id, businessId);
-    return this.prisma.revenue.update({ where: { id }, data: dto });
+    return this.prisma.revenue.update({
+      where: { id },
+      data: dto,
+      include: { userCategory: { select: { name: true, color: true } } },
+    });
   }
 
   async remove(id: string, businessId: string) {

@@ -1,6 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+// ─── Built-in color maps ──────────────────────────────────────────────────────
+
+const EXPENSE_COLORS: Record<string, string> = {
+  OFFICE_SUPPLIES:   '#378ADD',
+  TRAVEL:            '#FAC775',
+  MEALS:             '#F4C0D1',
+  EQUIPMENT:         '#185FA5',
+  SOFTWARE:          '#9FE1CB',
+  MARKETING:         '#D3D1C7',
+  PROFESSIONAL_FEES: '#B5D4F4',
+  RENT:              '#EAF3DE',
+  UTILITIES:         '#888780',
+  INSURANCE:         '#F0F9EC',
+  TAXES:             '#FECACA',
+  SALARY:            '#DCF5E6',
+  OTHER:             '#E5E4E0',
+};
+
+const REVENUE_COLORS: Record<string, string> = {
+  SERVICES:     '#378ADD',
+  PRODUCTS:     '#185FA5',
+  CONSULTING:   '#9FE1CB',
+  FREELANCE:    '#3B6D11',
+  SUBSCRIPTION: '#FAC775',
+  RENTAL:       '#B5D4F4',
+  OTHER:        '#D3D1C7',
+};
+
 @Injectable()
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
@@ -30,6 +58,7 @@ export class DashboardService {
       recentInvoices,
       taxDeadlines,
       monthlyData,
+      userCategories,
     ] = await Promise.all([
       // Revenue: paid invoices current month
       this.prisma.invoice.aggregate({
@@ -114,6 +143,8 @@ export class DashboardService {
       }),
       // Last 12 months revenue + expenses
       this.getMonthlyData(businessId, twelveMonthsAgo, now),
+      // User categories for color lookup
+      this.prisma.userCategory.findMany({ where: { businessId } }),
     ]);
 
     // ─── KPIs ──────────────────────────────────────────────────────────────
@@ -141,27 +172,42 @@ export class DashboardService {
       (invoiceStats['SENT']?.total ?? 0) + (invoiceStats['OVERDUE']?.total ?? 0);
     const overdueTotal = invoiceStats['OVERDUE']?.total ?? 0;
 
+    // ─── Color lookup helpers ──────────────────────────────────────────────
+
+    const expenseCatMap = new Map(userCategories.filter(c => c.type === 'EXPENSE').map(c => [c.slug, c.color]));
+    const revenueCatMap = new Map(userCategories.filter(c => c.type === 'REVENUE').map(c => [c.slug, c.color]));
+
     // ─── Expense breakdown ─────────────────────────────────────────────────
 
     const yearExpensesTotal = yearExpenses._sum.amount ?? 0;
-    const expenseBreakdown = allExpenses.map((e) => ({
-      category: e.category,
-      amount: e._sum.amount ?? 0,
-      percentage:
-        yearExpensesTotal > 0
-          ? Math.round(((e._sum.amount ?? 0) / yearExpensesTotal) * 100)
-          : 0,
-    }));
+    const expenseBreakdown = allExpenses.map((e) => {
+      const catSlug = e.category.toLowerCase();
+      const color = expenseCatMap.get(catSlug) ?? EXPENSE_COLORS[e.category] ?? '#E5E4E0';
+      return {
+        category: e.category,
+        amount: e._sum.amount ?? 0,
+        percentage:
+          yearExpensesTotal > 0
+            ? Math.round(((e._sum.amount ?? 0) / yearExpensesTotal) * 100)
+            : 0,
+        color,
+      };
+    });
 
     const yearRevenuesTotal = (yearInvoices._sum.total ?? 0) + (yearRevenues._sum.amount ?? 0);
-    const revenueBreakdown = allRevenues.map((r) => ({
-      category: r.category,
-      amount: r._sum.amount ?? 0,
-      percentage:
-        yearRevenuesTotal > 0
-          ? Math.round(((r._sum.amount ?? 0) / yearRevenuesTotal) * 100)
-          : 0,
-    }));
+    const revenueBreakdown = allRevenues.map((r) => {
+      const catSlug = r.category.toLowerCase();
+      const color = revenueCatMap.get(catSlug) ?? REVENUE_COLORS[r.category] ?? '#D3D1C7';
+      return {
+        category: r.category,
+        amount: r._sum.amount ?? 0,
+        percentage:
+          yearRevenuesTotal > 0
+            ? Math.round(((r._sum.amount ?? 0) / yearRevenuesTotal) * 100)
+            : 0,
+        color,
+      };
+    });
 
     // ─── Tax deadlines ─────────────────────────────────────────────────────
 
@@ -221,6 +267,99 @@ export class DashboardService {
         progress: thresholdProgress,
         isNearLimit: thresholdProgress >= 80,
       },
+    };
+  }
+
+  // ─── URSSAF ────────────────────────────────────────────────────────────────
+
+  async getUrssaf(businessId: string) {
+    const URSSAF_RATE = 0.212;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+
+    // Current quarter (0-indexed: 0=Q1, 1=Q2, 2=Q3, 3=Q4)
+    const currentQ = Math.floor(month / 3);
+
+    const getQuarterDates = (y: number, q: number) => {
+      const startMonth = q * 3;
+      const start = new Date(y, startMonth, 1);
+      const end = new Date(y, startMonth + 3, 0, 23, 59, 59);
+      return { start, end };
+    };
+
+    const quarterLabel = (y: number, q: number) => {
+      const months = [
+        ['Janvier', 'Mars'],
+        ['Avril', 'Juin'],
+        ['Juillet', 'Septembre'],
+        ['Octobre', 'Décembre'],
+      ];
+      return `${months[q][0]} — ${months[q][1]} ${y}`;
+    };
+
+    const declarationDeadline = (y: number, q: number): Date => {
+      // Q1→April 30, Q2→July 31, Q3→October 31, Q4→January 31 next year
+      const deadlines = [
+        new Date(y, 3, 30),   // April 30
+        new Date(y, 6, 31),   // July 31
+        new Date(y, 9, 31),   // October 31
+        new Date(y + 1, 0, 31), // January 31 next year
+      ];
+      return deadlines[q];
+    };
+
+    // Fetch revenue for current quarter + previous 3 quarters
+    const quarters: { year: number; quarter: number }[] = [];
+    for (let i = 3; i >= 0; i--) {
+      let q = currentQ - i;
+      let y = year;
+      while (q < 0) { q += 4; y -= 1; }
+      quarters.push({ year: y, quarter: q });
+    }
+
+    const revenuePromises = quarters.map(({ year: y, quarter: q }) => {
+      const { start, end } = getQuarterDates(y, q);
+      return Promise.all([
+        this.prisma.invoice.aggregate({
+          where: { businessId, status: 'PAID', paidAt: { gte: start, lte: end } },
+          _sum: { total: true },
+        }),
+        this.prisma.revenue.aggregate({
+          where: { businessId, date: { gte: start, lte: end } },
+          _sum: { amount: true },
+        }),
+      ]);
+    });
+
+    const results = await Promise.all(revenuePromises);
+
+    const quartersData = quarters.map(({ year: y, quarter: q }, i) => {
+      const [inv, rev] = results[i];
+      const revenue = (inv._sum.total ?? 0) + (rev._sum.amount ?? 0);
+      const qNum = q + 1;
+      return {
+        quarter: `Q${qNum}` as string,
+        label: quarterLabel(y, q),
+        revenue,
+        urssafEstimate: Math.round(revenue * URSSAF_RATE * 100) / 100,
+      };
+    });
+
+    const currentQData = quartersData[3]; // last item is current quarter
+    const previousQuarters = quartersData.slice(0, 3);
+
+    const deadline = declarationDeadline(year, currentQ);
+    const daysUntilDeadline = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      currentQuarterRevenue: currentQData.revenue,
+      urssafEstimate: currentQData.urssafEstimate,
+      quarter: currentQData.quarter,
+      periodLabel: currentQData.label,
+      declarationDeadline: deadline.toISOString().slice(0, 10),
+      daysUntilDeadline,
+      previousQuarters,
     };
   }
 

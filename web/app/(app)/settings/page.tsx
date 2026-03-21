@@ -11,7 +11,12 @@ import {
   apiUpdateBusiness,
   BusinessPayload,
 } from '@/lib/settings';
-import { Business, BusinessType, Subscription } from '@/lib/types';
+import {
+  apiGetUserCategories,
+  apiCreateUserCategory,
+  apiDeleteUserCategory,
+} from '@/lib/user-categories';
+import { Business, BusinessType, Subscription, UserCategory } from '@/lib/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,6 +60,7 @@ const PLAN_META: Record<string, { label: string; color: string; features: string
 const TABS = [
   { id: 'profile',      label: 'Profil' },
   { id: 'business',     label: 'Entreprise' },
+  { id: 'categories',   label: 'Catégories' },
   { id: 'subscription', label: 'Abonnement' },
 ] as const;
 type TabId = typeof TABS[number]['id'];
@@ -545,6 +551,200 @@ function SubscriptionTab({ token }: { token: string }) {
   );
 }
 
+// ─── Categories tab ───────────────────────────────────────────────────────────
+
+const COLOR_PRESETS = [
+  '#378ADD', '#185FA5', '#9FE1CB', '#3B6D11', '#FAC775',
+  '#F4C0D1', '#D3D1C7', '#B5D4F4', '#EAF3DE', '#F87171',
+  '#34D399', '#FBBF24',
+];
+
+function CategorySection({
+  token,
+  type,
+  title,
+}: {
+  token: string;
+  type: 'EXPENSE' | 'REVENUE';
+  title: string;
+}) {
+  const [categories, setCategories] = useState<UserCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState('');
+  const [newColor, setNewColor] = useState('#378ADD');
+  const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  useEffect(() => {
+    apiGetUserCategories(token, type)
+      .then(setCategories)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token, type]);
+
+  async function handleCreate(e: FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    setAlert(null);
+    try {
+      const created = await apiCreateUserCategory(token, { name: newName.trim(), color: newColor, type });
+      setCategories((prev) => [...prev, created]);
+      setNewName('');
+      setAlert({ type: 'success', msg: 'Catégorie créée.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Supprimer la catégorie "${name}" ?`)) return;
+    try {
+      await apiDeleteUserCategory(token, id);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur lors de la suppression.' });
+    }
+  }
+
+  const inputCls = 'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#378ADD] focus:border-transparent';
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-zinc-700">{title}</h3>
+
+      {alert && <Alert type={alert.type} message={alert.msg} onClose={() => setAlert(null)} />}
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <span className="h-4 w-4 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin" />
+          Chargement…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {categories.length === 0 && (
+            <p className="text-sm text-zinc-400">Aucune catégorie personnalisée.</p>
+          )}
+          {categories.map((cat) => (
+            <div key={cat.id} className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="h-4 w-4 rounded-full flex-shrink-0 border border-zinc-200" style={{ background: cat.color }} />
+                <span className="text-sm font-medium text-zinc-800">{cat.name}</span>
+              </div>
+              <button
+                onClick={() => handleDelete(cat.id, cat.name)}
+                className="rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition"
+                title="Supprimer"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create form */}
+      <form onSubmit={handleCreate} className="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Nouvelle catégorie</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Nom de la catégorie…"
+            className={`flex-1 ${inputCls}`}
+            required
+          />
+        </div>
+
+        {/* Color picker */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-2">Couleur</p>
+          <div className="flex flex-wrap gap-2">
+            {COLOR_PRESETS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setNewColor(c)}
+                className={`h-6 w-6 rounded-full border-2 transition ${
+                  newColor === c ? 'border-zinc-900 scale-110' : 'border-transparent hover:scale-105'
+                }`}
+                style={{ background: c }}
+                title={c}
+              />
+            ))}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-zinc-400">ou</span>
+              <input
+                type="color"
+                value={newColor}
+                onChange={(e) => setNewColor(e.target.value)}
+                className="h-6 w-8 cursor-pointer rounded border border-zinc-200"
+              />
+            </div>
+          </div>
+          {newColor && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="h-4 w-4 rounded-full border border-zinc-200" style={{ background: newColor }} />
+              <span className="text-xs text-zinc-500">{newColor}</span>
+            </div>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving || !newName.trim()}
+          className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {saving && <span className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+          Créer
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function CategoriesTab({ token }: { token: string }) {
+  const [subtab, setSubtab] = useState<'EXPENSE' | 'REVENUE'>('EXPENSE');
+
+  return (
+    <div className="space-y-5 max-w-2xl">
+      <div>
+        <SectionTitle>Catégories personnalisées</SectionTitle>
+        <p className="text-xs text-zinc-400 -mt-2 mb-4">
+          Créez vos propres catégories avec des couleurs pour personnaliser vos dépenses et revenus.
+        </p>
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
+        {([['EXPENSE', 'Dépenses'], ['REVENUE', 'Revenus']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setSubtab(id)}
+            className="rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
+            style={subtab === id ? { background: '#FFFFFF', color: '#1a1a18' } : { color: '#888780' }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {subtab === 'EXPENSE' && (
+        <CategorySection token={token} type="EXPENSE" title="Catégories de dépenses" />
+      )}
+      {subtab === 'REVENUE' && (
+        <CategorySection token={token} type="REVENUE" title="Catégories de revenus" />
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -589,6 +789,7 @@ export default function SettingsPage() {
       <div className="rounded-lg p-6" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
         {tab === 'profile'      && <ProfileTab token={token} />}
         {tab === 'business'     && <BusinessTab token={token} />}
+        {tab === 'categories'   && <CategoriesTab token={token} />}
         {tab === 'subscription' && <SubscriptionTab token={token} />}
       </div>
     </div>
