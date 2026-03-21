@@ -84,6 +84,30 @@ export interface ExpenseStats {
   byCategory: { category: ExpenseCategory; amount: number; vatAmount: number; count: number }[];
 }
 
+// ─── Revenue types ────────────────────────────────────────────────────────────
+
+export type RevenueCategory =
+  | 'SERVICES' | 'PRODUCTS' | 'CONSULTING' | 'FREELANCE'
+  | 'SUBSCRIPTION' | 'RENTAL' | 'OTHER';
+
+export interface Revenue {
+  id: string;
+  category: RevenueCategory;
+  amount: number;
+  vatAmount: number;
+  description: string | null;
+  date: string;
+  clientName: string | null;
+  createdAt: string;
+}
+
+export interface RevenueStats {
+  total: number;
+  vatTotal: number;
+  count: number;
+  byCategory: { category: RevenueCategory; amount: number; vatAmount: number; count: number }[];
+}
+
 // ─── Tax report types ─────────────────────────────────────────────────────────
 
 export type TaxReportType   = 'TVA' | 'IS' | 'IR' | 'URSSAF' | 'CFE' | 'OTHER';
@@ -132,6 +156,8 @@ export interface Business {
   iban: string | null;
   bic: string | null;
   revenueGoal: number | null;
+  isVatSubject: boolean;
+  defaultVatRate: number;
   createdAt: string;
   updatedAt: string;
 }

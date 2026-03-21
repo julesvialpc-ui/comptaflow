@@ -11,6 +11,7 @@ import { ClientsModule } from './clients/clients.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { RevenuesModule } from './revenues/revenues.module';
 import { TaxReportsModule } from './tax-reports/tax-reports.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
@@ -28,6 +29,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     InvoicesModule,
     TransactionsModule,
     ExpensesModule,
+    RevenuesModule,
     TaxReportsModule,
     NotificationsModule,
     ChatModule,

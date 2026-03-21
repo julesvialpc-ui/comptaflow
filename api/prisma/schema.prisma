@@ -55,6 +55,16 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum RevenueCategory {
+  SERVICES
+  PRODUCTS
+  CONSULTING
+  FREELANCE
+  SUBSCRIPTION
+  RENTAL
+  OTHER
+}
+
 enum TaxReportStatus {
   DRAFT
   SUBMITTED
@@ -134,9 +144,11 @@ model Business {
   logoUrl     String?
   iban        String?
   bic         String?
-  revenueGoal Float?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  revenueGoal    Float?
+  isVatSubject   Boolean @default(false)
+  defaultVatRate Float   @default(0.20)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   clients      Client[]
@@ -144,6 +156,7 @@ model Business {
   transactions Transaction[]
   expenses     Expense[]
   taxReports   TaxReport[]
+  revenues     Revenue[]
 
   @@map("businesses")
 }
@@ -253,6 +266,23 @@ model Expense {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
+}
+
+model Revenue {
+  id          String          @id @default(uuid())
+  businessId  String
+  category    RevenueCategory @default(SERVICES)
+  amount      Float
+  vatAmount   Float           @default(0)
+  description String?
+  date        DateTime        @default(now())
+  clientName  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("revenues")
 }
 
 model TaxReport {

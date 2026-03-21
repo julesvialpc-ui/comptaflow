@@ -6,6 +6,7 @@ import { eur } from '@/lib/format';
 import { StatCard } from './components/StatCard';
 import { RevenueChart } from './components/RevenueChart';
 import { ExpenseBreakdown } from './components/ExpenseBreakdown';
+import { FinancialPieChart } from './components/FinancialPieChart';
 import { InvoiceTable } from './components/InvoiceTable';
 import { TaxDeadlines } from './components/TaxDeadlines';
 import { ThresholdAlert } from './components/ThresholdAlert';
@@ -140,7 +141,10 @@ export default function DashboardClient() {
       {/* Charts */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2"><RevenueChart data={monthlyRevenue} /></div>
-        <ExpenseBreakdown data={expenseBreakdown} />
+        <div className="space-y-3">
+          <FinancialPieChart revenue={currentYear.revenue} expenses={currentYear.expenses} />
+          <ExpenseBreakdown data={expenseBreakdown} />
+        </div>
       </div>
 
       {/* Bottom row */}

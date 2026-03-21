@@ -52,6 +52,16 @@ const NAV_MAIN = [
     ),
   },
   {
+    href: '/revenues',
+    label: 'Revenus',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
     href: '/tax-reports',
     label: 'Rapports fiscaux',
     icon: (

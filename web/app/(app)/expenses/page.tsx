@@ -33,6 +33,24 @@ const CAT: Record<ExpenseCategory, { label: string; color: string }> = {
 
 const CATEGORIES = Object.keys(CAT) as ExpenseCategory[];
 
+// ─── Category VAT rates ───────────────────────────────────────────────────────
+
+const CATEGORY_VAT_RATE: Record<ExpenseCategory, number> = {
+  OFFICE_SUPPLIES: 0.20,
+  TRAVEL: 0.10,
+  MEALS: 0.10,
+  EQUIPMENT: 0.20,
+  SOFTWARE: 0.20,
+  MARKETING: 0.20,
+  PROFESSIONAL_FEES: 0.20,
+  RENT: 0.20,
+  UTILITIES: 0.20,
+  INSURANCE: 0,
+  TAXES: 0,
+  SALARY: 0,
+  OTHER: 0.20,
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function tok() {
@@ -65,12 +83,14 @@ interface ExpenseFormProps {
   initial?: Expense;
   onSave: (payload: ExpensePayload) => Promise<void>;
   onClose: () => void;
+  businessIsVatSubject: boolean;
 }
 
-function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
+function ExpenseForm({ initial, onSave, onClose, businessIsVatSubject }: ExpenseFormProps) {
   const [category, setCategory]     = useState<ExpenseCategory>(initial?.category ?? 'OTHER');
-  const [amount, setAmount]         = useState(initial ? String(initial.amount) : '');
-  const [vatAmount, setVatAmount]   = useState(initial ? String(initial.vatAmount) : '0');
+  const [ttcInput, setTtcInput]     = useState(
+    initial ? String(Math.round((initial.amount + initial.vatAmount) * 100) / 100) : '',
+  );
   const [description, setDescription] = useState(initial?.description ?? '');
   const [supplier, setSupplier]     = useState(initial?.supplier ?? '');
   const [date, setDate]             = useState(
@@ -83,15 +103,19 @@ function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) { setError('Montant invalide.'); return; }
+    const ttc = parseFloat(ttcInput);
+    if (!ttc || ttc <= 0) { setError('Montant invalide.'); return; }
+    const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[category] : 0;
+    const ht = vatRate > 0 ? ttc / (1 + vatRate) : ttc;
+    const tva = Math.round((ttc - ht) * 100) / 100;
+    const htRounded = Math.round(ht * 100) / 100;
 
     setLoading(true);
     try {
       await onSave({
         category,
-        amount: amt,
-        vatAmount: parseFloat(vatAmount) || 0,
+        amount: htRounded,
+        vatAmount: tva,
         description: description.trim() || undefined,
         supplier:    supplier.trim()    || undefined,
         date:        date               || undefined,
@@ -137,27 +161,36 @@ function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
           </select>
         </div>
 
-        {/* Amounts */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-500">Montant HT (€) <span className="text-red-500">*</span></label>
-            <input type="number" min="0" step="0.01" value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00" className={inputCls} />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-500">Montant TVA (€)</label>
-            <input type="number" min="0" step="0.01" value={vatAmount}
-              onChange={(e) => setVatAmount(e.target.value)}
-              placeholder="0.00" className={inputCls} />
-          </div>
+        {/* TTC input */}
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-zinc-500">Montant TTC (€) <span className="text-red-500">*</span></label>
+          <input type="number" min="0" step="0.01" value={ttcInput}
+            onChange={(e) => setTtcInput(e.target.value)}
+            placeholder="0.00" className={inputCls} />
         </div>
 
-        {/* TTC preview */}
-        {(parseFloat(amount) > 0) && (
-          <p className="text-xs text-zinc-400">
-            Total TTC : <span className="font-semibold text-zinc-700">{eur((parseFloat(amount) || 0) + (parseFloat(vatAmount) || 0))}</span>
-          </p>
+        {/* Calculated HT + TVA */}
+        {parseFloat(ttcInput) > 0 && (
+          <div className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-2.5 space-y-1.5">
+            {(() => {
+              const ttc = parseFloat(ttcInput) || 0;
+              const vatRate = businessIsVatSubject ? CATEGORY_VAT_RATE[category] : 0;
+              const ht = vatRate > 0 ? ttc / (1 + vatRate) : ttc;
+              const tva = ttc - ht;
+              return (
+                <>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-500">Taux TVA ({(vatRate * 100).toFixed(0)} %)</span>
+                    <span className="font-medium text-zinc-700">{eur(tva)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs border-t border-zinc-100 pt-1.5">
+                    <span className="text-zinc-500 font-medium">Montant HT calculé</span>
+                    <span className="font-bold text-emerald-600">{eur(ht)}</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         )}
 
         {/* Date + supplier */}
@@ -213,6 +246,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<ExpenseStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isVatSubject, setIsVatSubject] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -223,6 +257,18 @@ export default function ExpensesPage() {
   // Slide-over
   const [slider, setSlider] = useState<{ mode: 'create' } | { mode: 'edit'; expense: Expense } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Fetch business VAT settings
+  useEffect(() => {
+    const t = tok();
+    if (!t) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'}/businesses/me`, {
+      headers: { Authorization: `Bearer ${t}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(biz => { if (biz) setIsVatSubject(biz.isVatSubject ?? false); })
+      .catch(() => {});
+  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -536,6 +582,7 @@ export default function ExpensesPage() {
             initial={slider.mode === 'edit' ? slider.expense : undefined}
             onSave={handleSave}
             onClose={() => setSlider(null)}
+            businessIsVatSubject={isVatSubject}
           />
         )}
       </div>

@@ -61,6 +61,8 @@ export interface BusinessPayload {
   iban?: string;
   bic?: string;
   revenueGoal?: number | null;
+  isVatSubject?: boolean;
+  defaultVatRate?: number;
 }
 
 export async function apiGetBusiness(token: string): Promise<Business | null> {

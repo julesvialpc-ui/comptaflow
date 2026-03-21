@@ -16,4 +16,6 @@ export class UpdateBusinessDto {
   iban?: string;
   bic?: string;
   revenueGoal?: number;
+  isVatSubject?: boolean;
+  defaultVatRate?: number;
 }

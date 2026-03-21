@@ -243,6 +243,8 @@ function ProfileTab({ token }: { token: string }) {
 
 function BusinessTab({ token }: { token: string }) {
   const [form, setForm] = useState<BusinessPayload>({});
+  const [isVatSubject, setIsVatSubject] = useState(false);
+  const [defaultVatRate, setDefaultVatRate] = useState('0.20');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -266,6 +268,8 @@ function BusinessTab({ token }: { token: string }) {
           bic: b.bic ?? '',
           revenueGoal: b.revenueGoal ?? undefined,
         });
+        setIsVatSubject(b.isVatSubject ?? false);
+        setDefaultVatRate(String(b.defaultVatRate ?? 0.20));
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
@@ -283,6 +287,8 @@ function BusinessTab({ token }: { token: string }) {
       await apiUpdateBusiness(token, {
         ...form,
         revenueGoal: form.revenueGoal ? Number(form.revenueGoal) : null,
+        isVatSubject,
+        defaultVatRate: parseFloat(defaultVatRate),
       });
       setAlert({ type: 'success', msg: 'Informations entreprise enregistrées.' });
     } catch (err) {
@@ -326,6 +332,42 @@ function BusinessTab({ token }: { token: string }) {
               step={100}
             />
           </Field>
+          <div className="sm:col-span-2">
+            {/* TVA */}
+            <div className="pt-4 border-t border-[#E5E4E0]">
+              <p className="text-[12px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888780' }}>TVA</p>
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div
+                    onClick={() => setIsVatSubject(!isVatSubject)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${isVatSubject ? 'bg-[#378ADD]' : 'bg-zinc-200'}`}
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${isVatSubject ? 'translate-x-4' : 'translate-x-1'}`} />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>Assujetti à la TVA</p>
+                    <p className="text-[11px]" style={{ color: '#888780' }}>Activez si vous êtes redevable de la TVA</p>
+                  </div>
+                </label>
+                {isVatSubject && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px]" style={{ color: '#888780' }}>Taux TVA par défaut</label>
+                    <select
+                      value={defaultVatRate}
+                      onChange={(e) => setDefaultVatRate(e.target.value)}
+                      className="w-full rounded-md px-3 py-2 text-[13px] outline-none"
+                      style={{ border: '0.5px solid #E5E4E0', background: '#F8F8F7', color: '#1a1a18' }}
+                    >
+                      <option value="0">0 % (exonéré)</option>
+                      <option value="0.055">5,5 %</option>
+                      <option value="0.10">10 %</option>
+                      <option value="0.20">20 % (taux normal)</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           <Field label="SIRET" hint="14 chiffres">
             <Input value={form.siret ?? ''} onChange={set('siret')} placeholder="12345678900001" maxLength={14} />
           </Field>
