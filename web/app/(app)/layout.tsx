@@ -115,7 +115,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Logo */}
       <div className="flex h-14 items-center px-4 border-b border-[#E5E4E0]">
         <span className="text-[20px] font-medium tracking-tight">
-          <span style={{ color: '#185FA5' }}>Compta</span><span style={{ color: '#378ADD' }}>Flow</span>
+          <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
         </span>
       </div>
 
@@ -298,7 +298,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
           <span className="text-[17px] font-medium tracking-tight">
-            <span style={{ color: '#185FA5' }}>Compta</span><span style={{ color: '#378ADD' }}>Flow</span>
+            <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
           </span>
           <div className="w-9" />
         </div>

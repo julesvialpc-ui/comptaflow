@@ -1,4 +1,5 @@
 import { Client } from './types';
+import { authFetch } from './auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -31,25 +32,23 @@ export type ClientPayload = Omit<Client, 'id' | 'isActive'> & { isActive?: boole
 
 export async function apiGetClients(token: string, search?: string): Promise<ClientWithStats[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-  const res = await fetch(`${API}/clients${qs}`, {
+  const res = await authFetch(`${API}/clients${qs}`, {
     headers: authHeaders(token),
-    cache: 'no-store',
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiGetClient(token: string, id: string): Promise<ClientDetail> {
-  const res = await fetch(`${API}/clients/${id}`, {
+  const res = await authFetch(`${API}/clients/${id}`, {
     headers: authHeaders(token),
-    cache: 'no-store',
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiCreateClient(token: string, payload: ClientPayload): Promise<Client> {
-  const res = await fetch(`${API}/clients`, {
+  const res = await authFetch(`${API}/clients`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -63,7 +62,7 @@ export async function apiUpdateClient(
   id: string,
   payload: Partial<ClientPayload>,
 ): Promise<Client> {
-  const res = await fetch(`${API}/clients/${id}`, {
+  const res = await authFetch(`${API}/clients/${id}`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -73,7 +72,7 @@ export async function apiUpdateClient(
 }
 
 export async function apiToggleActive(token: string, id: string): Promise<Client> {
-  const res = await fetch(`${API}/clients/${id}/toggle-active`, {
+  const res = await authFetch(`${API}/clients/${id}/toggle-active`, {
     method: 'PATCH',
     headers: authHeaders(token),
   });
@@ -82,7 +81,7 @@ export async function apiToggleActive(token: string, id: string): Promise<Client
 }
 
 export async function apiDeleteClient(token: string, id: string): Promise<void> {
-  const res = await fetch(`${API}/clients/${id}`, {
+  const res = await authFetch(`${API}/clients/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   });

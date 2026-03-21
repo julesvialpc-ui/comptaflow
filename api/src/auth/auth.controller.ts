@@ -34,6 +34,7 @@ export class AuthController {
     return this.authService.login(user.id, user.email);
   }
 
+  @Public()
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)

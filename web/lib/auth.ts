@@ -41,6 +41,57 @@ export function getAccessToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+// ─── Token refresh ────────────────────────────────────────────────────────────
+
+let _refreshPromise: Promise<string | null> | null = null;
+
+async function doRefresh(): Promise<string | null> {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    });
+    if (!res.ok) return null;
+    const data: AuthTokens = await res.json();
+    saveTokens(data);
+    return data.accessToken;
+  } catch {
+    return null;
+  }
+}
+
+// Single in-flight refresh to avoid parallel refresh calls
+async function refreshAccessToken(): Promise<string | null> {
+  if (!_refreshPromise) {
+    _refreshPromise = doRefresh().finally(() => { _refreshPromise = null; });
+  }
+  return _refreshPromise;
+}
+
+// ─── Authenticated fetch with auto-refresh ────────────────────────────────────
+// Caller still passes Authorization header (or not). On 401, we refresh and retry.
+
+export async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  let res = await fetch(input, { ...init, cache: init.cache ?? 'no-store' });
+
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      const headers = new Headers(init.headers);
+      headers.set('Authorization', `Bearer ${newToken}`);
+      res = await fetch(input, { ...init, headers, cache: init.cache ?? 'no-store' });
+    } else {
+      clearTokens();
+      if (typeof window !== 'undefined') window.location.href = '/login';
+    }
+  }
+
+  return res;
+}
+
 // ─── API calls ────────────────────────────────────────────────────────────────
 
 export async function apiLogin(payload: LoginPayload): Promise<{ user: AuthUser } & AuthTokens> {

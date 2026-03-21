@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import DashboardClient from './DashboardClient';
 
 export const metadata: Metadata = {
-  title: 'Dashboard — ComptaFlow',
+  title: 'Dashboard — Konta',
   description: 'Tableau de bord financier de votre micro-entreprise',
 };
 

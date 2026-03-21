@@ -519,39 +519,35 @@ export default function SettingsPage() {
   if (!token) return null;
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
-        <div className="mx-auto max-w-4xl">
-          <h1 className="text-xl font-bold text-zinc-900">Paramètres</h1>
-          <p className="text-sm text-zinc-500">Gérez votre profil et les informations de votre entreprise</p>
-        </div>
-      </header>
+      <div>
+        <h1 className="text-[16px] font-medium" style={{ color: '#1a1a18' }}>Paramètres</h1>
+        <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>Gérez votre profil et les informations de votre entreprise</p>
+      </div>
 
-      <div className="mx-auto max-w-4xl px-6 py-6">
-        {/* Tab bar */}
-        <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit mb-6">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                tab === t.id
-                  ? 'bg-white text-zinc-900 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-700'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
+            style={tab === t.id
+              ? { background: '#FFFFFF', color: '#1a1a18' }
+              : { color: '#888780' }
+            }
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Tab content */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-          {tab === 'profile'      && <ProfileTab token={token} />}
-          {tab === 'business'     && <BusinessTab token={token} />}
-          {tab === 'subscription' && <SubscriptionTab token={token} />}
-        </div>
+      {/* Tab content */}
+      <div className="rounded-lg p-6" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+        {tab === 'profile'      && <ProfileTab token={token} />}
+        {tab === 'business'     && <BusinessTab token={token} />}
+        {tab === 'subscription' && <SubscriptionTab token={token} />}
       </div>
     </div>
   );

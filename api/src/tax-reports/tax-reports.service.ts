@@ -318,7 +318,7 @@ export class TaxReportsService {
       // ── Footer ───────────────────────────────────────────────────────────────
       doc.fontSize(7).font('Helvetica').fillColor('#a1a1aa')
         .text(
-          `${business.name} — ${business.siret ? 'SIRET ' + business.siret : ''} — Document généré par ComptaFlow`,
+          `${business.name} — ${business.siret ? 'SIRET ' + business.siret : ''} — Document généré par Konta`,
           L, 780, { width: W, align: 'center' },
         );
 

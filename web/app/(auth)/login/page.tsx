@@ -36,7 +36,7 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] flex-col justify-between p-10" style={{ background: '#E6F1FB' }}>
         <div className="text-[22px] font-medium tracking-tight">
-          <span style={{ color: '#185FA5' }}>Compta</span><span style={{ color: '#378ADD' }}>Flow</span>
+          <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
         </div>
 
         <div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
 
         <div className="rounded-xl p-4" style={{ background: '#B5D4F4' }}>
           <p className="text-[12px] italic leading-relaxed mb-3" style={{ color: '#0C447C' }}>
-            &ldquo;En 10 minutes j&apos;avais tout configuré. ComptaFlow a changé ma façon de gérer mon activité.&rdquo;
+            &ldquo;En 10 minutes j&apos;avais tout configuré. Konta a changé ma façon de gérer mon activité.&rdquo;
           </p>
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold" style={{ background: '#378ADD', color: '#E6F1FB' }}>
@@ -86,7 +86,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="mb-8 lg:hidden text-[22px] font-medium tracking-tight">
-            <span style={{ color: '#185FA5' }}>Compta</span><span style={{ color: '#378ADD' }}>Flow</span>
+            <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
           </div>
 
           {/* Tabs */}

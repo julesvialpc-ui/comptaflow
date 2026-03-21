@@ -14,7 +14,7 @@ export function AuthCard({ children }: AuthCardProps) {
                 d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <span className="text-xl font-bold text-zinc-900">ComptaFlow</span>
+          <span className="text-xl font-bold text-zinc-900">Konta</span>
         </div>
         <p className="mt-1.5 text-xs text-zinc-500">Comptabilité IA pour micro-entrepreneurs</p>
       </div>

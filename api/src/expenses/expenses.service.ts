@@ -88,7 +88,8 @@ export class ExpensesService {
   // ── Create ────────────────────────────────────────────────────────────────
 
   create(dto: CreateExpenseDto, businessId: string) {
-    return this.prisma.expense.create({ data: { ...dto, businessId } });
+    const date = dto.date ? new Date(dto.date as unknown as string) : new Date();
+    return this.prisma.expense.create({ data: { ...dto, date, businessId } });
   }
 
   // ── Update ────────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { TaxReport, TaxReportStatus, TaxReportType, TaxPreview } from './types';
+import { authFetch } from './auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -25,16 +26,16 @@ export async function apiGetTaxReports(
   if (filters.type)   params.set('type',   filters.type);
   if (filters.status) params.set('status', filters.status);
   const qs = params.toString();
-  const res = await fetch(`${API}/tax-reports${qs ? '?' + qs : ''}`, {
-    headers: authHeaders(token), cache: 'no-store',
+  const res = await authFetch(`${API}/tax-reports${qs ? '?' + qs : ''}`, {
+    headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiGetUpcoming(token: string): Promise<TaxReport[]> {
-  const res = await fetch(`${API}/tax-reports/upcoming`, {
-    headers: authHeaders(token), cache: 'no-store',
+  const res = await authFetch(`${API}/tax-reports/upcoming`, {
+    headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -47,15 +48,15 @@ export async function apiPreview(
   periodEnd: string,
 ): Promise<TaxPreview> {
   const params = new URLSearchParams({ type, periodStart, periodEnd });
-  const res = await fetch(`${API}/tax-reports/preview?${params}`, {
-    headers: authHeaders(token), cache: 'no-store',
+  const res = await authFetch(`${API}/tax-reports/preview?${params}`, {
+    headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiCreateTaxReport(token: string, payload: TaxReportPayload): Promise<TaxReport> {
-  const res = await fetch(`${API}/tax-reports`, {
+  const res = await authFetch(`${API}/tax-reports`, {
     method: 'POST', headers: authHeaders(token), body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -65,7 +66,7 @@ export async function apiCreateTaxReport(token: string, payload: TaxReportPayloa
 export async function apiUpdateTaxReport(
   token: string, id: string, payload: Partial<TaxReportPayload>,
 ): Promise<TaxReport> {
-  const res = await fetch(`${API}/tax-reports/${id}`, {
+  const res = await authFetch(`${API}/tax-reports/${id}`, {
     method: 'PATCH', headers: authHeaders(token), body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -75,7 +76,7 @@ export async function apiUpdateTaxReport(
 export async function apiUpdateTaxStatus(
   token: string, id: string, status: TaxReportStatus,
 ): Promise<TaxReport> {
-  const res = await fetch(`${API}/tax-reports/${id}/status`, {
+  const res = await authFetch(`${API}/tax-reports/${id}/status`, {
     method: 'PATCH', headers: authHeaders(token), body: JSON.stringify({ status }),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -83,7 +84,7 @@ export async function apiUpdateTaxStatus(
 }
 
 export async function apiDeleteTaxReport(token: string, id: string): Promise<void> {
-  const res = await fetch(`${API}/tax-reports/${id}`, {
+  const res = await authFetch(`${API}/tax-reports/${id}`, {
     method: 'DELETE', headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());

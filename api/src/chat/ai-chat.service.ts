@@ -350,7 +350,7 @@ export class AiChatService {
       }
     }
 
-    return `Tu es ComptaFlow IA, l'assistant comptable intelligent pour micro-entrepreneurs français.
+    return `Tu es Konta IA, l'assistant comptable intelligent pour micro-entrepreneurs français.
 
 Tu as accès à des outils pour consulter les données financières réelles de l'entreprise en temps réel.
 Utilise-les proactivement pour répondre avec des chiffres précis plutôt que des estimations génériques.

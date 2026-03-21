@@ -1,3 +1,5 @@
+import { authFetch } from './auth';
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
 function authHeaders(token: string) {
@@ -12,16 +14,15 @@ export interface ChatMessage {
 }
 
 export async function apiGetHistory(token: string, limit = 60): Promise<ChatMessage[]> {
-  const res = await fetch(`${API}/chat/history?limit=${limit}`, {
+  const res = await authFetch(`${API}/chat/history?limit=${limit}`, {
     headers: authHeaders(token),
-    cache: 'no-store',
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiClearHistory(token: string): Promise<void> {
-  const res = await fetch(`${API}/chat/history`, {
+  const res = await authFetch(`${API}/chat/history`, {
     method: 'DELETE',
     headers: authHeaders(token),
   });
@@ -38,7 +39,7 @@ export async function apiStreamMessage(
   message: string,
   onEvent: (ev: StreamEvent) => void,
 ): Promise<void> {
-  const res = await fetch(`${API}/chat/ai/stream`, {
+  const res = await authFetch(`${API}/chat/ai/stream`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ message }),

@@ -1,4 +1,5 @@
 import { UserProfile, Business, BusinessType } from './types';
+import { authFetch } from './auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -9,13 +10,13 @@ function authHeaders(token: string) {
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export async function apiGetProfile(token: string): Promise<UserProfile> {
-  const res = await fetch(`${API}/auth/me`, { headers: authHeaders(token), cache: 'no-store' });
+  const res = await authFetch(`${API}/auth/me`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiUpdateProfile(token: string, dto: { name?: string }): Promise<UserProfile> {
-  const res = await fetch(`${API}/auth/me`, {
+  const res = await authFetch(`${API}/auth/me`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(dto),
@@ -31,7 +32,7 @@ export async function apiChangePassword(
   token: string,
   dto: { currentPassword: string; newPassword: string },
 ): Promise<{ message: string }> {
-  const res = await fetch(`${API}/auth/change-password`, {
+  const res = await authFetch(`${API}/auth/change-password`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(dto),
@@ -63,14 +64,14 @@ export interface BusinessPayload {
 }
 
 export async function apiGetBusiness(token: string): Promise<Business | null> {
-  const res = await fetch(`${API}/businesses/me`, { headers: authHeaders(token), cache: 'no-store' });
+  const res = await authFetch(`${API}/businesses/me`, { headers: authHeaders(token) });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function apiUpdateBusiness(token: string, dto: BusinessPayload): Promise<Business> {
-  const res = await fetch(`${API}/businesses/me`, {
+  const res = await authFetch(`${API}/businesses/me`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(dto),

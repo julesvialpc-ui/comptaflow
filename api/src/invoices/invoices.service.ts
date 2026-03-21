@@ -305,7 +305,7 @@ export class InvoicesService {
       // ── Footer ────────────────────────────────────────────────────────────────
       doc.fontSize(7).font('Helvetica').fillColor('#a1a1aa')
         .text(
-          `${biz.name} — ${biz.siret ? 'SIRET ' + biz.siret : ''} — Document généré par ComptaFlow`,
+          `${biz.name} — ${biz.siret ? 'SIRET ' + biz.siret : ''} — Document généré par Konta`,
           L,
           780,
           { width: W, align: 'center' },

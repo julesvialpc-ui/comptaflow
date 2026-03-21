@@ -300,7 +300,7 @@ export default function ChatPage() {
             <IconBot />
           </div>
           <div>
-            <p className="font-semibold text-zinc-900 text-sm">ComptaFlow IA</p>
+            <p className="font-semibold text-zinc-900 text-sm">Konta IA</p>
             <p className="text-xs text-zinc-400">Assistant comptable · Powered by Claude</p>
           </div>
         </div>
@@ -349,7 +349,7 @@ export default function ChatPage() {
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-zinc-900">Bonjour, je suis ComptaFlow IA</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">Bonjour, je suis Konta IA</h2>
               <p className="text-sm text-zinc-500 mt-1 max-w-md">
                 Votre assistant comptable intelligent. Je peux analyser vos finances, répondre à vos questions fiscales et consulter vos données en temps réel.
               </p>
@@ -438,7 +438,7 @@ export default function ChatPage() {
           </button>
         </div>
         <p className="text-[10px] text-zinc-400 text-center mt-2">
-          ComptaFlow IA peut faire des erreurs. Vérifiez les informations importantes avec un expert-comptable.
+          Konta IA peut faire des erreurs. Vérifiez les informations importantes avec un expert-comptable.
         </p>
       </div>
     </div>
