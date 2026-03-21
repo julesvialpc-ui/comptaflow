@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InvoiceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -76,8 +76,17 @@ export class InvoicesService {
 
   // ── Create ────────────────────────────────────────────────────────────────
 
-  create(dto: CreateInvoiceDto, businessId: string) {
+  async create(dto: CreateInvoiceDto, businessId: string) {
     const { items, ...invoiceData } = dto;
+
+    // Validate clientId belongs to this business
+    if (invoiceData.clientId) {
+      const client = await this.prisma.client.findFirst({
+        where: { id: invoiceData.clientId, businessId },
+      });
+      if (!client) throw new BadRequestException('Client introuvable');
+    }
+
     const vatRate = invoiceData.vatRate ?? 0;
     const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
     const vatAmount = subtotal * (vatRate / 100);

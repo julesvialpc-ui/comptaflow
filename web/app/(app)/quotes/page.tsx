@@ -12,10 +12,10 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
 const STATUS_LABEL: Record<QuoteStatus, string> = {
   DRAFT: 'Brouillon',
-  SENT: 'Envoy\u00e9',
-  ACCEPTED: 'Accept\u00e9',
-  REJECTED: 'Refus\u00e9',
-  EXPIRED: 'Expir\u00e9',
+  SENT: 'Envoyé',
+  ACCEPTED: 'Accepté',
+  REJECTED: 'Refusé',
+  EXPIRED: 'Expiré',
 };
 
 const STATUS_BG: Record<QuoteStatus, string> = {
@@ -37,10 +37,10 @@ const STATUS_TEXT: Record<QuoteStatus, string> = {
 const TABS: { label: string; value: QuoteStatus | 'ALL' }[] = [
   { label: 'Tous',       value: 'ALL'      },
   { label: 'Brouillon',  value: 'DRAFT'    },
-  { label: 'Envoy\u00e9',value: 'SENT'     },
-  { label: 'Accept\u00e9',value: 'ACCEPTED' },
-  { label: 'Refus\u00e9', value: 'REJECTED' },
-  { label: 'Expir\u00e9', value: 'EXPIRED'  },
+  { label: 'Envoyé',value: 'SENT'     },
+  { label: 'Accepté',value: 'ACCEPTED' },
+  { label: 'Refusé', value: 'REJECTED' },
+  { label: 'Expiré', value: 'EXPIRED'  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ function tok() {
 }
 
 function fmtDate(d: string | null | undefined) {
-  if (!d) return '\u2014';
+  if (!d) return '—';
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
@@ -183,7 +183,7 @@ function QuoteForm({ initial, onSave, onClose, clients }: QuoteFormProps) {
               />
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-[10px] text-zinc-400 mb-0.5">Qt\u00e9</label>
+                  <label className="block text-[10px] text-zinc-400 mb-0.5">Qté</label>
                   <input type="number" min="1" step="1" value={it.quantity}
                     onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))}
                     className={inputCls} />
@@ -246,7 +246,7 @@ function QuoteForm({ initial, onSave, onClose, clients }: QuoteFormProps) {
       <div className="border-t border-zinc-100 px-5 py-4 flex gap-3">
         <button type="submit" disabled={loading}
           className="flex-1 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
-          {loading ? 'Enregistrement\u2026' : initial ? 'Mettre \u00e0 jour' : 'Cr\u00e9er le devis'}
+          {loading ? 'Enregistrement…' : initial ? 'Mettre à jour' : 'Créer le devis'}
         </button>
         <button type="button" onClick={onClose}
           className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition">
@@ -311,7 +311,7 @@ export default function QuotesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer ce devis ? Cette action est irr\u00e9versible.')) return;
+    if (!confirm('Supprimer ce devis ? Cette action est irréversible.')) return;
     setDeleting(id);
     try {
       await apiDeleteQuote(tok(), id);
@@ -334,7 +334,7 @@ export default function QuotesPage() {
       if (tab !== 'ALL') filters.status = tab;
       const updated = await apiGetQuotes(t, filters);
       setQuotes(updated);
-      alert('Devis converti en facture avec succ\u00e8s.');
+      alert('Devis converti en facture avec succès.');
     } catch {
       alert('Erreur lors de la conversion.');
     } finally {
@@ -371,8 +371,8 @@ export default function QuotesPage() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Total devis', value: String(totalQuotes), sub: 'tous statuts' },
-          { label: 'En attente', value: String(pending), sub: 'brouillons + envoy\u00e9s' },
-          { label: 'Accept\u00e9s', value: String(accepted), sub: 'devis valid\u00e9s' },
+          { label: 'En attente', value: String(pending), sub: 'brouillons + envoyés' },
+          { label: 'Acceptés', value: String(accepted), sub: 'devis validés' },
           { label: 'Montant total', value: eur(totalAmount), sub: 'TTC' },
         ].map(card => (
           <div key={card.label} className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
@@ -404,7 +404,7 @@ export default function QuotesPage() {
         </svg>
         <input
           type="text"
-          placeholder="Rechercher\u2026"
+          placeholder="Rechercher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-md py-2 pl-8 pr-3 text-[13px] outline-none"
@@ -417,26 +417,26 @@ export default function QuotesPage() {
       {/* Table */}
       <div className="rounded-lg overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-[13px]" style={{ color: '#888780' }}>Chargement\u2026</div>
+          <div className="flex items-center justify-center py-16 text-[13px]" style={{ color: '#888780' }}>Chargement…</div>
         ) : quotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <svg className="h-8 w-8" style={{ color: '#D3D1C7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="text-[13px]" style={{ color: '#888780' }}>Aucun devis trouv\u00e9</p>
+            <p className="text-[13px]" style={{ color: '#888780' }}>Aucun devis trouvé</p>
             <button onClick={() => setSlider({ mode: 'create' })} className="text-[13px] font-medium" style={{ color: '#378ADD' }}>
-              Cr\u00e9er un devis
+              Créer un devis
             </button>
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: '0.5px solid #E5E4E0', background: '#F8F8F7' }}>
-                <th className="py-3 pl-4 pr-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>N\u00b0</th>
+                <th className="py-3 pl-4 pr-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>N°</th>
                 <th className="px-3 py-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>Client</th>
                 <th className="px-3 py-3 text-right text-[11px] font-medium" style={{ color: '#888780' }}>Montant TTC</th>
                 <th className="px-3 py-3 text-center text-[11px] font-medium" style={{ color: '#888780' }}>Statut</th>
-                <th className="px-3 py-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>Date \u00e9mission</th>
+                <th className="px-3 py-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>Date émission</th>
                 <th className="px-3 py-3 text-left text-[11px] font-medium" style={{ color: '#888780' }}>Date expiration</th>
                 <th className="py-3 pl-3 pr-4 text-right text-[11px] font-medium" style={{ color: '#888780' }}>Actions</th>
               </tr>

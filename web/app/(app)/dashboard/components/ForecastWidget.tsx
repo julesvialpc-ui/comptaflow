@@ -27,11 +27,11 @@ export function ForecastWidget() {
 
   return (
     <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
-      <h3 className="text-[13px] font-medium mb-3" style={{ color: '#1a1a18' }}>Pr\u00e9visions 3 mois</h3>
+      <h3 className="text-[13px] font-medium mb-3" style={{ color: '#1a1a18' }}>Prévisions 3 mois</h3>
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-[13px]" style={{ color: '#888780' }}>Chargement\u2026</div>
+        <div className="flex items-center justify-center py-8 text-[13px]" style={{ color: '#888780' }}>Chargement…</div>
       ) : data.length === 0 ? (
-        <p className="text-[12px] py-4" style={{ color: '#888780' }}>Aucune donn\u00e9e disponible</p>
+        <p className="text-[12px] py-4" style={{ color: '#888780' }}>Aucune donnée disponible</p>
       ) : (
         <div className="grid grid-cols-3 gap-3">
           {data.slice(0, 3).map(month => (
@@ -43,11 +43,11 @@ export function ForecastWidget() {
                   <span className="font-medium" style={{ color: '#378ADD' }}>{eur(month.projectedRevenue)}</span>
                 </div>
                 <div className="flex justify-between text-[11px]">
-                  <span style={{ color: '#DC2626' }}>D\u00e9penses</span>
+                  <span style={{ color: '#DC2626' }}>Dépenses</span>
                   <span className="font-medium" style={{ color: '#DC2626' }}>{eur(month.projectedExpenses)}</span>
                 </div>
                 <div className="flex justify-between text-[11px] pt-1" style={{ borderTop: '0.5px solid #E5E4E0' }}>
-                  <span style={{ color: '#888780' }}>B\u00e9n\u00e9fice</span>
+                  <span style={{ color: '#888780' }}>Bénéfice</span>
                   <span className="font-medium" style={{ color: month.projectedProfit >= 0 ? '#3B6D11' : '#DC2626' }}>
                     {eur(month.projectedProfit)}
                   </span>

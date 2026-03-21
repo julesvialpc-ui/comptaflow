@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { QuoteStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -63,6 +63,14 @@ export class QuotesService {
 
   async create(dto: CreateQuoteDto, businessId: string) {
     const { items, ...quoteData } = dto;
+
+    if (quoteData.clientId) {
+      const client = await this.prisma.client.findFirst({
+        where: { id: quoteData.clientId, businessId },
+      });
+      if (!client) throw new BadRequestException('Client introuvable');
+    }
+
     const number = await this.generateNumber(businessId);
     const vatRate = quoteData.vatRate ?? 0;
     const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);

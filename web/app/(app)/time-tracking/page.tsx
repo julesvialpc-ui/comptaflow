@@ -81,7 +81,7 @@ function TimeEntryForm({ initial, onSave, onClose, clients }: TimeEntryFormProps
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
         <h2 className="text-base font-semibold text-zinc-900">
-          {initial ? 'Modifier l\u2019entr\u00e9e' : 'Nouvelle entr\u00e9e'}
+          {initial ? 'Modifier l’entrée' : 'Nouvelle entrée'}
         </h2>
         <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 transition">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ function TimeEntryForm({ initial, onSave, onClose, clients }: TimeEntryFormProps
         <div className="space-y-1">
           <label className="block text-xs font-medium text-zinc-500">Description <span className="text-red-500">*</span></label>
           <input value={description} onChange={(e) => setDescription(e.target.value)}
-            placeholder="T\u00e2che effectu\u00e9e\u2026" className={inputCls} required />
+            placeholder="Tâche effectuée…" className={inputCls} required />
         </div>
 
         <div className="space-y-1">
@@ -120,7 +120,7 @@ function TimeEntryForm({ initial, onSave, onClose, clients }: TimeEntryFormProps
               placeholder="2.5" className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-500">Taux horaire (\u20ac/h) <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-zinc-500">Taux horaire (€/h) <span className="text-red-500">*</span></label>
             <input type="number" min="0" step="1" value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
               placeholder="50" className={inputCls} />
@@ -137,7 +137,7 @@ function TimeEntryForm({ initial, onSave, onClose, clients }: TimeEntryFormProps
       <div className="border-t border-zinc-100 px-5 py-4 flex gap-3">
         <button type="submit" disabled={loading}
           className="flex-1 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
-          {loading ? 'Enregistrement\u2026' : initial ? 'Mettre \u00e0 jour' : 'Ajouter'}
+          {loading ? 'Enregistrement…' : initial ? 'Mettre à jour' : 'Ajouter'}
         </button>
         <button type="button" onClick={onClose}
           className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition">
@@ -230,7 +230,7 @@ export default function TimeTrackingPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer cette entr\u00e9e ?')) return;
+    if (!confirm('Supprimer cette entrée ?')) return;
     setDeleting(id);
     try {
       await apiDeleteTimeEntry(tok(), id);
@@ -254,7 +254,7 @@ export default function TimeTrackingPage() {
     // Group by client
     const clientIds = [...new Set(selectedEntries.map(e => e.clientId).filter(Boolean))] as string[];
     if (clientIds.length !== 1) {
-      alert('S\u00e9lectionnez des entr\u00e9es pour un seul client.');
+      alert('Sélectionnez des entrées pour un seul client.');
       return;
     }
     setInvoicing(true);
@@ -263,7 +263,7 @@ export default function TimeTrackingPage() {
         clientId: clientIds[0],
         timeEntryIds: selectedEntries.map(e => e.id),
       });
-      setToast('Facture g\u00e9n\u00e9r\u00e9e avec succ\u00e8s !');
+      setToast('Facture générée avec succès !');
       load();
     } catch {
       alert('Erreur lors de la facturation.');
@@ -293,7 +293,7 @@ export default function TimeTrackingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[16px] font-medium" style={{ color: '#1a1a18' }}>Suivi du temps</h1>
-          <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>{entries.length} entr\u00e9e{entries.length !== 1 ? 's' : ''}</p>
+          <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>{entries.length} entrée{entries.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={() => setSlider({ mode: 'create' })}
@@ -303,7 +303,7 @@ export default function TimeTrackingPage() {
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Nouvelle entr\u00e9e
+          Nouvelle entrée
         </button>
       </div>
 
@@ -311,8 +311,8 @@ export default function TimeTrackingPage() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Heures ce mois', value: `${stats?.totalHours?.toFixed(1) ?? '0'}h`, sub: 'total' },
-          { label: 'CA facturable', value: eur(stats?.unbilledAmount ?? 0), sub: `${(stats?.unbilledHours ?? 0).toFixed(1)}h non factur\u00e9es` },
-          { label: 'CA factur\u00e9', value: eur((stats?.totalAmount ?? 0) - (stats?.unbilledAmount ?? 0)), sub: 'factur\u00e9' },
+          { label: 'CA facturable', value: eur(stats?.unbilledAmount ?? 0), sub: `${(stats?.unbilledHours ?? 0).toFixed(1)}h non facturées` },
+          { label: 'CA facturé', value: eur((stats?.totalAmount ?? 0) - (stats?.unbilledAmount ?? 0)), sub: 'facturé' },
         ].map(card => (
           <div key={card.label} className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
             <p className="text-[11px] mb-1" style={{ color: '#888780' }}>{card.label}</p>
@@ -352,7 +352,7 @@ export default function TimeTrackingPage() {
 
         {/* Billed filter */}
         <div className="flex gap-1 rounded-md p-0.5" style={{ background: '#EDEDEB' }}>
-          {([['all', 'Tout'], ['unbilled', 'Non factur\u00e9'], ['billed', 'Factur\u00e9']] as const).map(([v, l]) => (
+          {([['all', 'Tout'], ['unbilled', 'Non facturé'], ['billed', 'Facturé']] as const).map(([v, l]) => (
             <button
               key={v}
               onClick={() => setBilledFilter(v)}
@@ -375,7 +375,7 @@ export default function TimeTrackingPage() {
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Facturer la s\u00e9lection ({unbilledSelected.length})
+            Facturer la sélection ({unbilledSelected.length})
           </button>
         )}
       </div>
@@ -383,15 +383,15 @@ export default function TimeTrackingPage() {
       {/* Table */}
       <div className="rounded-lg overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-[13px]" style={{ color: '#888780' }}>Chargement\u2026</div>
+          <div className="flex items-center justify-center py-16 text-[13px]" style={{ color: '#888780' }}>Chargement…</div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <svg className="h-8 w-8" style={{ color: '#D3D1C7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-[13px]" style={{ color: '#888780' }}>Aucune entr\u00e9e de temps</p>
+            <p className="text-[13px]" style={{ color: '#888780' }}>Aucune entrée de temps</p>
             <button onClick={() => setSlider({ mode: 'create' })} className="text-[13px] font-medium" style={{ color: '#378ADD' }}>
-              Ajouter une entr\u00e9e
+              Ajouter une entrée
             </button>
           </div>
         ) : (
@@ -444,10 +444,10 @@ export default function TimeTrackingPage() {
                   </td>
                   <td className="px-3 py-3 text-[13px]" style={{ color: '#888780' }}>{fmtDate(entry.date)}</td>
                   <td className="px-3 py-3 text-[13px]" style={{ color: '#1a1a18' }}>
-                    {entry.client?.name ?? <span className="italic" style={{ color: '#888780' }}>\u2014</span>}
+                    {entry.client?.name ?? <span className="italic" style={{ color: '#888780' }}>—</span>}
                   </td>
                   <td className="px-3 py-3 text-[13px]" style={{ color: '#1a1a18' }}>
-                    {entry.description || <span className="italic" style={{ color: '#888780' }}>\u2014</span>}
+                    {entry.description || <span className="italic" style={{ color: '#888780' }}>—</span>}
                   </td>
                   <td className="px-3 py-3 text-right text-[13px] font-medium tabular-nums" style={{ color: '#1a1a18' }}>
                     {entry.hours}h
@@ -466,7 +466,7 @@ export default function TimeTrackingPage() {
                         : { background: '#FFFBEB', color: '#F59E0B' }
                       }
                     >
-                      {entry.isBilled ? 'Factur\u00e9' : 'Non factur\u00e9'}
+                      {entry.isBilled ? 'Facturé' : 'Non facturé'}
                     </span>
                   </td>
                   <td className="py-3 pl-3 pr-4">

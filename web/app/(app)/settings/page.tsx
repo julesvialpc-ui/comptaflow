@@ -66,7 +66,7 @@ const PLAN_META: Record<string, { label: string; color: string; features: string
 const TABS = [
   { id: 'profile',      label: 'Profil' },
   { id: 'business',     label: 'Entreprise' },
-  { id: 'categories',   label: 'Cat\u00e9gories' },
+  { id: 'categories',   label: 'Catégories' },
   { id: 'budgets',      label: 'Budgets' },
   { id: 'subscription', label: 'Abonnement' },
 ] as const;
@@ -756,16 +756,16 @@ function CategoriesTab({ token }: { token: string }) {
 
 const BUDGET_CAT_LABELS: Record<string, string> = {
   OFFICE_SUPPLIES: 'Fournitures',
-  TRAVEL: 'D\u00e9placements',
+  TRAVEL: 'Déplacements',
   MEALS: 'Repas',
-  EQUIPMENT: 'Mat\u00e9riel',
+  EQUIPMENT: 'Matériel',
   SOFTWARE: 'Logiciels',
   MARKETING: 'Marketing',
   PROFESSIONAL_FEES: 'Honoraires',
   RENT: 'Loyer',
   UTILITIES: 'Charges',
   INSURANCE: 'Assurance',
-  TAXES: 'Imp\u00f4ts',
+  TAXES: 'Impôts',
   SALARY: 'Salaires',
   OTHER: 'Autre',
 };
@@ -803,7 +803,7 @@ function BudgetsTab({ token }: { token: string }) {
         return [...prev, created];
       });
       setNewAmount('');
-      setAlert({ type: 'success', msg: 'Budget enregistr\u00e9.' });
+      setAlert({ type: 'success', msg: 'Budget enregistré.' });
     } catch (err) {
       setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur' });
     } finally {
@@ -829,16 +829,16 @@ function BudgetsTab({ token }: { token: string }) {
 
   if (loading) return (
     <div className="flex items-center gap-2 text-sm text-zinc-400">
-      <span className="h-4 w-4 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin"/>Chargement\u2026
+      <span className="h-4 w-4 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin"/>Chargement…
     </div>
   );
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <SectionTitle>Budgets par cat\u00e9gorie</SectionTitle>
+        <SectionTitle>Budgets par catégorie</SectionTitle>
         <p className="text-xs text-zinc-400 -mt-2 mb-4">
-          Les budgets sont calcul\u00e9s sur le mois en cours.
+          Les budgets sont calculés sur le mois en cours.
         </p>
       </div>
 
@@ -847,7 +847,7 @@ function BudgetsTab({ token }: { token: string }) {
       {/* Budget list */}
       <div className="space-y-3">
         {budgets.length === 0 && (
-          <p className="text-sm text-zinc-400">Aucun budget d\u00e9fini.</p>
+          <p className="text-sm text-zinc-400">Aucun budget défini.</p>
         )}
         {budgets.map(b => {
           const pct = b.percentage ?? 0;
@@ -887,7 +887,7 @@ function BudgetsTab({ token }: { token: string }) {
         <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Ajouter un budget</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Cat\u00e9gorie</label>
+            <label className="block text-xs text-zinc-400 mb-1">Catégorie</label>
             <select value={newCategory} onChange={(e) => setNewCategory(e.target.value as ExpenseCategory)}
               className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#378ADD] focus:border-transparent">
               {BUDGET_CATEGORIES.map(c => (
@@ -896,7 +896,7 @@ function BudgetsTab({ token }: { token: string }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Budget mensuel (\u20ac)</label>
+            <label className="block text-xs text-zinc-400 mb-1">Budget mensuel (€)</label>
             <input type="number" min="0" step="10" value={newAmount}
               onChange={(e) => setNewAmount(e.target.value)}
               placeholder="500"

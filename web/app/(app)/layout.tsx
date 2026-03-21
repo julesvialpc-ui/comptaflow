@@ -76,7 +76,7 @@ const NAV_MAIN = [
   },
   {
     href: '/expenses',
-    label: 'D\u00e9penses',
+    label: 'Dépenses',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -142,7 +142,7 @@ function initials(name: string | null, email: string) {
 function relativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '\u00e0 l\u2019instant';
+  if (mins < 1) return 'à l’instant';
   if (mins < 60) return `il y a ${mins}min`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `il y a ${hrs}h`;
