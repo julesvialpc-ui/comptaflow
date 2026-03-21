@@ -13,7 +13,7 @@ import { eur } from '@/lib/format';
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG: Record<TaxReportType, { label: string; color: string; autoCalc: boolean }> = {
-  TVA:    { label: 'Décl. TVA',    color: 'bg-indigo-100 text-indigo-700',  autoCalc: true  },
+  TVA:    { label: 'Décl. TVA',    color: 'bg-indigo-100 text-[#185FA5]',  autoCalc: true  },
   URSSAF: { label: 'URSSAF',       color: 'bg-violet-100 text-violet-700',  autoCalc: true  },
   IR:     { label: 'Impôt / Rev.', color: 'bg-amber-100 text-amber-700',    autoCalc: true  },
   IS:     { label: 'IS',           color: 'bg-orange-100 text-orange-700',  autoCalc: false },
@@ -137,7 +137,7 @@ function ReportForm({ initial, onSave, onClose }: ReportFormProps) {
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
+  const inputCls = 'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]';
   const canAutoCalc = TYPE_CONFIG[type].autoCalc && periodStart && periodEnd;
 
   return (
@@ -194,7 +194,7 @@ function ReportForm({ initial, onSave, onClose }: ReportFormProps) {
         {/* Auto-calc */}
         {canAutoCalc && (
           <button type="button" onClick={handleAutoCalc} disabled={previewLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition disabled:opacity-60">
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#E6F1FB] bg-[#E6F1FB] px-4 py-2.5 text-sm font-medium text-[#185FA5] hover:bg-indigo-100 transition disabled:opacity-60">
             <svg className={`h-4 w-4 ${previewLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -205,11 +205,11 @@ function ReportForm({ initial, onSave, onClose }: ReportFormProps) {
 
         {/* Preview breakdown */}
         {preview && Object.keys(preview.details).length > 0 && (
-          <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-3 space-y-1.5">
-            <p className="text-xs font-semibold text-indigo-700 mb-2">Détail du calcul</p>
+          <div className="rounded-lg bg-[#E6F1FB] border border-indigo-100 p-3 space-y-1.5">
+            <p className="text-xs font-semibold text-[#185FA5] mb-2">Détail du calcul</p>
             {Object.entries(preview.details).map(([key, val]) => (
               <div key={key} className="flex justify-between text-xs">
-                <span className="text-indigo-600">{DETAIL_LABELS[key] ?? key}</span>
+                <span className="text-[#378ADD]">{DETAIL_LABELS[key] ?? key}</span>
                 <span className="font-semibold text-indigo-800 tabular-nums">
                   {key === 'cotisationRate' ? `${val} %` : typeof val === 'number' && val > 100 ? eur(val) : val}
                 </span>
@@ -231,13 +231,13 @@ function ReportForm({ initial, onSave, onClose }: ReportFormProps) {
           <label className="block text-xs font-medium text-zinc-500">Notes</label>
           <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
             placeholder="Références, observations…"
-            className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+            className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
         </div>
       </div>
 
       <div className="border-t border-zinc-100 px-5 py-4 flex gap-3">
         <button type="submit" disabled={loading}
-          className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-60">
+          className="flex-1 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
           {loading ? 'Enregistrement…' : initial ? 'Mettre à jour' : 'Créer la déclaration'}
         </button>
         <button type="button" onClick={onClose}
@@ -274,7 +274,7 @@ function ExpenseReportTab() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 space-y-4">
+      <div className="rounded-xl border border-[#E5E4E0] bg-white p-6 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">Générer une note de frais</h2>
           <p className="text-sm text-zinc-500 mt-0.5">
@@ -286,17 +286,17 @@ function ExpenseReportTab() {
           <div className="space-y-1">
             <label className="block text-xs font-medium text-zinc-500">Du</label>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-medium text-zinc-500">Au</label>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
           </div>
         </div>
 
         <button onClick={handleDownload} disabled={loading || !from || !to}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-60">
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -316,7 +316,7 @@ function ExpenseReportTab() {
         ].map((s) => (
           <button key={s.label}
             onClick={() => { setFrom(s.from); setTo(s.to); }}
-            className="w-full flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm hover:bg-zinc-50 transition">
+            className="w-full flex items-center justify-between rounded-lg border border-[#E5E4E0] bg-white px-4 py-3 text-sm hover:bg-zinc-50 transition">
             <span className="font-medium text-zinc-700">{s.label}</span>
             <span className="text-zinc-400 text-xs">{fmtDate(s.from)} → {fmtDate(s.to)}</span>
           </button>
@@ -425,9 +425,9 @@ export default function TaxReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Fiscalité</h1>
@@ -435,7 +435,7 @@ export default function TaxReportsPage() {
           </div>
           {tab === 'declarations' && (
             <button onClick={() => setSlider({ mode: 'create' })}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
+              className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -516,7 +516,7 @@ export default function TaxReportsPage() {
               {/* Type filter */}
               <select value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value as TaxReportType | 'ALL')}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                className="rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]">
                 <option value="ALL">Tous les types</option>
                 {(Object.keys(TYPE_CONFIG) as TaxReportType[]).map((t) => (
                   <option key={t} value={t}>{TYPE_CONFIG[t].label}</option>
@@ -525,7 +525,7 @@ export default function TaxReportsPage() {
             </div>
 
             {/* Table */}
-            <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+            <div className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-20 text-sm text-zinc-400">Chargement…</div>
               ) : reports.length === 0 ? (
@@ -536,7 +536,7 @@ export default function TaxReportsPage() {
                   </svg>
                   <p className="text-sm text-zinc-400">Aucune déclaration</p>
                   <button onClick={() => setSlider({ mode: 'create' })}
-                    className="text-sm font-medium text-indigo-600 hover:underline">
+                    className="text-sm font-medium text-[#378ADD] hover:underline">
                     Créer une déclaration
                   </button>
                 </div>

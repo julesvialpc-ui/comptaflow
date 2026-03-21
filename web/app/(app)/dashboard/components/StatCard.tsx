@@ -30,32 +30,25 @@ export function StatCard({ label, value, growth, subtitle, variant = 'default', 
   };
 
   return (
-    <div className={`rounded-xl border border-zinc-200 p-5 shadow-sm ${variantBg[variant]}`}>
+    <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-zinc-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{eur(value)}</p>
-          {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
-        </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${variantIcon[variant]}`}>
-          {icon}
+          <p className="text-[11px] mb-1" style={{ color: '#888780' }}>{label}</p>
+          <p className="text-[18px] font-medium" style={{ color: variant === 'success' ? '#3B6D11' : variant === 'danger' ? '#A32D2D' : variant === 'warning' ? '#BA7517' : '#185FA5' }}>
+            {eur(value)}
+          </p>
+          {subtitle && <p className="text-[10px] mt-0.5" style={{ color: '#888780' }}>{subtitle}</p>}
         </div>
       </div>
 
       {growth !== null && growth !== undefined && (
-        <div className="mt-3 flex items-center gap-1.5">
+        <div className="mt-2 flex items-center gap-1.5">
           <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-              isPositive
-                ? 'bg-emerald-100 text-emerald-700'
-                : isNegative
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-zinc-100 text-zinc-600'
-            }`}
+            className="text-[10px]"
+            style={{ color: isPositive ? '#3B6D11' : isNegative ? '#A32D2D' : '#888780' }}
           >
-            {isPositive ? '↑' : isNegative ? '↓' : '→'} {pct(growth)}
+            {isPositive ? '+' : ''}{pct(growth)} vs mois dernier
           </span>
-          <span className="text-xs text-zinc-400">vs mois dernier</span>
         </div>
       )}
     </div>

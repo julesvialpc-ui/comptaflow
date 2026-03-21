@@ -18,43 +18,39 @@ interface TaxDeadlinesProps {
 
 export function TaxDeadlines({ deadlines }: TaxDeadlinesProps) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-100 px-5 py-4">
-        <h2 className="text-sm font-semibold text-zinc-700">Échéances fiscales</h2>
+    <div className="rounded-lg" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+      <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid #E5E4E0' }}>
+        <h2 className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>Échéances fiscales</h2>
       </div>
       {deadlines.length === 0 ? (
-        <p className="px-5 py-6 text-sm text-zinc-400">Aucune échéance à venir.</p>
+        <p className="px-4 py-5 text-[13px]" style={{ color: '#888780' }}>Aucune échéance à venir.</p>
       ) : (
-        <div className="divide-y divide-zinc-50">
-          {deadlines.map((d) => {
+        <div>
+          {deadlines.map((d, i) => {
             const urgent = d.daysRemaining !== null && d.daysRemaining <= 7;
             const soon = d.daysRemaining !== null && d.daysRemaining <= 30;
             return (
-              <div key={d.id} className="flex items-center justify-between px-5 py-3">
+              <div key={d.id} className="flex items-center justify-between px-4 py-3" style={{ borderBottom: i < deadlines.length - 1 ? '0.5px solid #F0F0EE' : undefined }}>
                 <div>
-                  <p className="text-sm font-medium text-zinc-900">{TAX_LABEL[d.type] ?? d.type}</p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>{TAX_LABEL[d.type] ?? d.type}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#888780' }}>
                     {new Date(d.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
-                <div className="ml-4 flex items-center gap-3 shrink-0">
+                <div className="ml-4 flex items-center gap-2.5 shrink-0">
                   {d.amount > 0 && (
-                    <span className="text-sm font-semibold text-zinc-700">{eur(d.amount)}</span>
+                    <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>{eur(d.amount)}</span>
                   )}
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      urgent
-                        ? 'bg-red-100 text-red-700'
-                        : soon
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-zinc-100 text-zinc-600'
-                    }`}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    style={urgent
+                      ? { background: '#FEE2E2', color: '#A32D2D' }
+                      : soon
+                        ? { background: '#FAEEDA', color: '#BA7517' }
+                        : { background: '#E5E4E0', color: '#888780' }
+                    }
                   >
-                    {d.daysRemaining !== null
-                      ? d.daysRemaining === 0
-                        ? "Aujourd'hui"
-                        : `J-${d.daysRemaining}`
-                      : '—'}
+                    {d.daysRemaining !== null ? d.daysRemaining === 0 ? "Aujourd'hui" : `J-${d.daysRemaining}` : '—'}
                   </span>
                 </div>
               </div>

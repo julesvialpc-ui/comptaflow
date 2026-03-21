@@ -100,9 +100,9 @@ export default function InvoiceDetailPage() {
   const actions = STATUS_ACTIONS[invoice.status] ?? [];
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/invoices" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition">
@@ -137,7 +137,7 @@ export default function InvoiceDetailPage() {
             {/* PDF */}
             <button
               onClick={handleDownloadPdf}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
+              className="flex items-center gap-1.5 rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -149,7 +149,7 @@ export default function InvoiceDetailPage() {
             {invoice.status === 'DRAFT' && (
               <Link
                 href={`/invoices/${invoice.id}/edit`}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
+                className="flex items-center gap-1.5 rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -172,9 +172,9 @@ export default function InvoiceDetailPage() {
       <main className="mx-auto max-w-5xl px-6 py-6 grid grid-cols-3 gap-6">
         {/* Left — invoice preview */}
         <div className="col-span-2">
-          <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white shadow-sm overflow-hidden">
             {/* Invoice header */}
-            <div className="bg-indigo-600 px-8 py-6 flex justify-between items-start">
+            <div className="bg-[#378ADD] px-8 py-6 flex justify-between items-start">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-indigo-200">Facture</p>
                 <p className="mt-1 text-2xl font-bold text-white font-mono">{invoice.number}</p>
@@ -273,7 +273,7 @@ export default function InvoiceDetailPage() {
         {/* Right — sidebar */}
         <div className="space-y-4">
           {/* Summary */}
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-3">
             <h2 className="text-sm font-semibold text-zinc-700">Résumé</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -301,7 +301,7 @@ export default function InvoiceDetailPage() {
 
           {/* Status history placeholder */}
           {actions.length > 0 && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <div className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-3">
               <h2 className="text-sm font-semibold text-zinc-700">Changer le statut</h2>
               <div className="space-y-2">
                 {actions.map((action) => (

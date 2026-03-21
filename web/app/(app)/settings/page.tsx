@@ -40,7 +40,7 @@ const PLAN_META: Record<string, { label: string; color: string; features: string
   },
   PRO: {
     label: 'Pro',
-    color: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    color: 'bg-[#E6F1FB] text-[#378ADD] border-[#378ADD]',
     features: ['Factures illimitées', 'Assistant IA complet', 'Multi-utilisateurs (2)', 'Support prioritaire'],
   },
   BUSINESS: {
@@ -101,8 +101,8 @@ function SaveButton({ loading, label = 'Enregistrer' }: { loading?: boolean; lab
     <button
       type="submit"
       disabled={loading}
-      className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white
-        hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-5 py-2 text-sm font-semibold text-white
+        hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {loading && <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
       {label}
@@ -519,7 +519,7 @@ export default function SettingsPage() {
   if (!token) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6">
       {/* Header */}
       <header className="border-b border-zinc-200 bg-white px-6 py-4">
         <div className="mx-auto max-w-4xl">

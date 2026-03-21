@@ -119,9 +119,9 @@ export default function NewInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/invoices" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition">
@@ -154,7 +154,7 @@ export default function NewInvoicePage() {
           <div className="col-span-2 space-y-6">
 
             {/* Meta */}
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">
+            <section className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-4">
               <h2 className="text-sm font-semibold text-zinc-700">Informations générales</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -162,7 +162,7 @@ export default function NewInvoicePage() {
                   <input
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm font-mono focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -170,7 +170,7 @@ export default function NewInvoicePage() {
                   <select
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   >
                     <option value="">— Sans client —</option>
                     {clients.map((c) => (
@@ -184,7 +184,7 @@ export default function NewInvoicePage() {
                     type="date"
                     value={issueDate}
                     onChange={(e) => setIssueDate(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -193,7 +193,7 @@ export default function NewInvoicePage() {
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -205,7 +205,7 @@ export default function NewInvoicePage() {
                     step="0.1"
                     value={globalVat}
                     onChange={(e) => setGlobalVat(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -214,14 +214,14 @@ export default function NewInvoicePage() {
                     value={paymentTerms}
                     onChange={(e) => setPaymentTerms(e.target.value)}
                     placeholder="Ex : 30 jours net"
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
                   />
                 </div>
               </div>
             </section>
 
             {/* Items */}
-            <section className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+            <section className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
               <div className="border-b border-zinc-100 px-5 py-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-zinc-700">Lignes de facturation</h2>
               </div>
@@ -247,7 +247,7 @@ export default function NewInvoicePage() {
                         value={row.description}
                         onChange={(e) => updateItem(row.id, 'description', e.target.value)}
                         placeholder="Description du service ou produit"
-                        className="w-full rounded border border-zinc-200 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                        className="w-full rounded border border-zinc-200 px-2.5 py-1.5 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-1 focus:ring-[#E6F1FB]"
                       />
                       <input
                         type="number"
@@ -255,7 +255,7 @@ export default function NewInvoicePage() {
                         step="0.5"
                         value={row.quantity}
                         onChange={(e) => updateItem(row.id, 'quantity', e.target.value)}
-                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-center text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-center text-sm focus:border-[#378ADD] focus:outline-none focus:ring-1 focus:ring-[#E6F1FB]"
                       />
                       <input
                         type="number"
@@ -264,7 +264,7 @@ export default function NewInvoicePage() {
                         value={row.unitPrice}
                         onChange={(e) => updateItem(row.id, 'unitPrice', e.target.value)}
                         placeholder="0.00"
-                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-right text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-right text-sm focus:border-[#378ADD] focus:outline-none focus:ring-1 focus:ring-[#E6F1FB]"
                       />
                       <input
                         type="number"
@@ -272,7 +272,7 @@ export default function NewInvoicePage() {
                         max="100"
                         value={row.vatRate}
                         onChange={(e) => updateItem(row.id, 'vatRate', e.target.value)}
-                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-center text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                        className="w-full rounded border border-zinc-200 px-2 py-1.5 text-center text-sm focus:border-[#378ADD] focus:outline-none focus:ring-1 focus:ring-[#E6F1FB]"
                       />
                       <span className="text-right text-sm text-zinc-700 tabular-nums">
                         {lineTotal > 0 ? eur(lineTotal) : '—'}
@@ -296,7 +296,7 @@ export default function NewInvoicePage() {
                 <button
                   type="button"
                   onClick={addItem}
-                  className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition"
+                  className="flex items-center gap-1.5 text-sm font-medium text-[#378ADD] hover:opacity-80 transition"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -307,14 +307,14 @@ export default function NewInvoicePage() {
             </section>
 
             {/* Notes */}
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 space-y-1">
+            <section className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-1">
               <label className="text-xs font-medium text-zinc-500">Notes (facultatif)</label>
               <textarea
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Mentions légales, informations complémentaires…"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm resize-none focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm resize-none focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
               />
             </section>
           </div>
@@ -322,7 +322,7 @@ export default function NewInvoicePage() {
           {/* Right — totals + actions */}
           <div className="space-y-4">
             {/* Totals */}
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <section className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-3">
               <h2 className="text-sm font-semibold text-zinc-700">Récapitulatif</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-zinc-600">
@@ -341,12 +341,12 @@ export default function NewInvoicePage() {
             </section>
 
             {/* Actions */}
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <section className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-3">
               <button
                 type="button"
                 onClick={() => handleSubmit('SENT')}
                 disabled={loading}
-                className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? 'Enregistrement…' : 'Enregistrer et envoyer'}
               </button>
@@ -354,7 +354,7 @@ export default function NewInvoicePage() {
                 type="button"
                 onClick={() => handleSubmit('DRAFT')}
                 disabled={loading}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-lg border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Enregistrer en brouillon
               </button>

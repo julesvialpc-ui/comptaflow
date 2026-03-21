@@ -20,7 +20,7 @@ const CAT: Record<ExpenseCategory, { label: string; color: string }> = {
   TRAVEL:            { label: 'Déplacements',  color: 'bg-amber-100 text-amber-700'    },
   MEALS:             { label: 'Repas',         color: 'bg-orange-100 text-orange-700'  },
   EQUIPMENT:         { label: 'Matériel',      color: 'bg-violet-100 text-violet-700'  },
-  SOFTWARE:          { label: 'Logiciels',     color: 'bg-indigo-100 text-indigo-700'  },
+  SOFTWARE:          { label: 'Logiciels',     color: 'bg-indigo-100 text-[#185FA5]'  },
   MARKETING:         { label: 'Marketing',     color: 'bg-pink-100 text-pink-700'      },
   PROFESSIONAL_FEES: { label: 'Honoraires',    color: 'bg-teal-100 text-teal-700'      },
   RENT:              { label: 'Loyer',         color: 'bg-stone-100 text-stone-700'    },
@@ -104,7 +104,7 @@ function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100';
+  const inputCls = 'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]';
 
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
@@ -177,13 +177,13 @@ function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
           <label className="block text-xs font-medium text-zinc-500">Description</label>
           <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
             placeholder="Détails de la dépense…"
-            className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+            className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
         </div>
 
         {/* Deductible */}
         <label className="flex items-center gap-3 cursor-pointer rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 hover:bg-zinc-100 transition">
           <input type="checkbox" checked={isDeductible} onChange={(e) => setIsDeductible(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
+            className="h-4 w-4 rounded border-zinc-300 text-[#378ADD] focus:ring-[#E6F1FB]" />
           <div>
             <p className="text-sm font-medium text-zinc-700">Déductible fiscalement</p>
             <p className="text-xs text-zinc-400">Incluse dans vos charges déductibles</p>
@@ -194,7 +194,7 @@ function ExpenseForm({ initial, onSave, onClose }: ExpenseFormProps) {
       {/* Footer */}
       <div className="border-t border-zinc-100 px-5 py-4 flex gap-3">
         <button type="submit" disabled={loading}
-          className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-60">
+          className="flex-1 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
           {loading ? 'Enregistrement…' : initial ? 'Mettre à jour' : 'Ajouter la dépense'}
         </button>
         <button type="button" onClick={onClose}
@@ -297,9 +297,9 @@ export default function ExpensesPage() {
   const periodLabel = period === 'month' ? 'ce mois' : period === 'year' ? 'cette année' : 'toutes périodes';
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Dépenses</h1>
@@ -307,7 +307,7 @@ export default function ExpensesPage() {
           </div>
           <button
             onClick={() => setSlider({ mode: 'create' })}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+            className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -326,7 +326,7 @@ export default function ExpensesPage() {
             { label: 'Dépenses',                     value: String(count),   sub: 'transactions'                     },
             { label: 'Moy. par dépense',             value: count ? eur(total / count) : '—', sub: 'montant moyen HT' },
           ].map((card) => (
-            <div key={card.label} className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+            <div key={card.label} className="rounded-xl border border-[#E5E4E0] bg-white px-5 py-4">
               <p className="text-xs font-medium text-zinc-400 mb-1">{card.label}</p>
               <p className="text-xl font-bold text-zinc-900 tabular-nums">{card.value}</p>
               <p className="text-xs text-zinc-400 mt-0.5">{card.sub}</p>
@@ -357,7 +357,7 @@ export default function ExpensesPage() {
             </svg>
             <input type="text" placeholder="Description, fournisseur…" value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-64 rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+              className="w-64 rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
           </div>
         </div>
 
@@ -366,7 +366,7 @@ export default function ExpensesPage() {
           <button
             onClick={() => setActiveCategory('ALL')}
             className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-              activeCategory === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+              activeCategory === 'ALL' ? 'bg-[#378ADD] text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
             }`}
           >
             Toutes
@@ -377,7 +377,7 @@ export default function ExpensesPage() {
               onClick={() => setActiveCategory(activeCategory === category ? 'ALL' : category)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 activeCategory === category
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-[#378ADD] text-white'
                   : `${CAT[category].color} hover:opacity-80`
               }`}
             >
@@ -387,7 +387,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+        <div className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-sm text-zinc-400">Chargement…</div>
           ) : expenses.length === 0 ? (
@@ -398,7 +398,7 @@ export default function ExpensesPage() {
               </svg>
               <p className="text-sm text-zinc-400">Aucune dépense sur cette période</p>
               <button onClick={() => setSlider({ mode: 'create' })}
-                className="text-sm font-medium text-indigo-600 hover:underline">
+                className="text-sm font-medium text-[#378ADD] hover:underline">
                 Ajouter une dépense
               </button>
             </div>
@@ -487,7 +487,7 @@ export default function ExpensesPage() {
 
         {/* Category breakdown */}
         {(stats?.byCategory ?? []).length > 0 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white p-5">
             <h2 className="mb-4 text-sm font-semibold text-zinc-700">Répartition par catégorie</h2>
             <div className="space-y-2">
               {stats!.byCategory.map(({ category, amount: amt }) => {
@@ -499,7 +499,7 @@ export default function ExpensesPage() {
                     </span>
                     <div className="flex-1 h-2 rounded-full bg-zinc-100">
                       <div
-                        className="h-2 rounded-full bg-indigo-500 transition-all"
+                        className="h-2 rounded-full bg-[#E6F1FB]0 transition-all"
                         style={{ width: `${pct.toFixed(1)}%` }}
                       />
                     </div>

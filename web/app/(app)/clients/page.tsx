@@ -17,7 +17,7 @@ function Avatar({ name }: { name: string }) {
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
   const colors = [
-    'bg-indigo-100 text-indigo-700',
+    'bg-indigo-100 text-[#185FA5]',
     'bg-violet-100 text-violet-700',
     'bg-sky-100 text-sky-700',
     'bg-emerald-100 text-emerald-700',
@@ -87,9 +87,9 @@ export default function ClientsPage() {
   const inactive = clients.filter((c) => !c.isActive).length;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Clients</h1>
@@ -100,7 +100,7 @@ export default function ClientsPage() {
           </div>
           <Link
             href="/clients/new"
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+            className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -124,7 +124,7 @@ export default function ClientsPage() {
               placeholder="Nom, email, ville, SIRET…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]"
             />
           </div>
           {inactive > 0 && (
@@ -132,8 +132,8 @@ export default function ClientsPage() {
               onClick={() => setShowInactive((v) => !v)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition ${
                 showInactive
-                  ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                  : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
+                  ? 'border-[#E6F1FB] bg-[#E6F1FB] text-[#185FA5]'
+                  : 'border-[#E5E4E0] bg-white text-zinc-600 hover:bg-zinc-50'
               }`}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,13 +158,13 @@ export default function ClientsPage() {
               {search ? 'Aucun client ne correspond à la recherche' : 'Aucun client pour l\'instant'}
             </p>
             {!search && (
-              <Link href="/clients/new" className="text-sm font-medium text-indigo-600 hover:underline">
+              <Link href="/clients/new" className="text-sm font-medium text-[#378ADD] hover:underline">
                 Ajouter un client
               </Link>
             )}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50">

@@ -18,7 +18,7 @@ function fmtDate(d: string) {
 function Avatar({ name }: { name: string }) {
   const initials = name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
   const colors = [
-    'bg-indigo-100 text-indigo-700', 'bg-violet-100 text-violet-700',
+    'bg-indigo-100 text-[#185FA5]', 'bg-violet-100 text-violet-700',
     'bg-sky-100 text-sky-700', 'bg-emerald-100 text-emerald-700',
     'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700',
   ];
@@ -75,9 +75,9 @@ export default function ClientDetailPage() {
   if (!client) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="p-6">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/clients" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition">
@@ -100,7 +100,7 @@ export default function ClientDetailPage() {
           <div className="flex items-center gap-2">
             <Link
               href={`/clients/${client.id}/edit`}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
+              className="flex items-center gap-1.5 rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -111,13 +111,13 @@ export default function ClientDetailPage() {
             <button
               onClick={handleToggle}
               disabled={acting}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition disabled:opacity-60"
+              className="rounded-lg border border-[#E5E4E0] bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition disabled:opacity-60"
             >
               {client.isActive ? 'Archiver' : 'Réactiver'}
             </button>
             <Link
               href={`/invoices/new?clientId=${client.id}`}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-[#378ADD] px-3 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -140,7 +140,7 @@ export default function ClientDetailPage() {
         <div className="col-span-2 space-y-6">
 
           {/* Identity card */}
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white p-6">
             <div className="flex items-start gap-4 mb-6">
               <Avatar name={client.name} />
               <div>
@@ -153,7 +153,7 @@ export default function ClientDetailPage() {
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
               {client.email && (
                 <InfoRow label="E-mail">
-                  <a href={`mailto:${client.email}`} className="text-indigo-600 hover:underline">{client.email}</a>
+                  <a href={`mailto:${client.email}`} className="text-[#378ADD] hover:underline">{client.email}</a>
                 </InfoRow>
               )}
               {client.phone && <InfoRow label="Téléphone">{client.phone}</InfoRow>}
@@ -172,17 +172,17 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Invoices */}
-          <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
             <div className="border-b border-zinc-100 px-5 py-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-zinc-700">Dernières factures</h2>
-              <Link href={`/invoices?clientId=${client.id}`} className="text-xs text-indigo-600 hover:underline">
+              <Link href={`/invoices?clientId=${client.id}`} className="text-xs text-[#378ADD] hover:underline">
                 Voir toutes
               </Link>
             </div>
             {client.invoices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <p className="text-sm text-zinc-400">Aucune facture pour ce client</p>
-                <Link href={`/invoices/new?clientId=${client.id}`} className="text-sm font-medium text-indigo-600 hover:underline">
+                <Link href={`/invoices/new?clientId=${client.id}`} className="text-sm font-medium text-[#378ADD] hover:underline">
                   Créer une facture
                 </Link>
               </div>
@@ -201,7 +201,7 @@ export default function ClientDetailPage() {
                   {client.invoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-zinc-50 transition">
                       <td className="py-2.5 pl-5 pr-3">
-                        <Link href={`/invoices/${inv.id}`} className="font-mono text-xs font-medium text-indigo-600 hover:underline">
+                        <Link href={`/invoices/${inv.id}`} className="font-mono text-xs font-medium text-[#378ADD] hover:underline">
                           {inv.number}
                         </Link>
                       </td>
@@ -223,7 +223,7 @@ export default function ClientDetailPage() {
 
         {/* Right — stats */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">
+          <div className="rounded-xl border border-[#E5E4E0] bg-white p-5 space-y-4">
             <h2 className="text-sm font-semibold text-zinc-700">Statistiques</h2>
             <StatTile label="CA encaissé" value={eur(client.totalRevenue)} accent />
             <StatTile label="Factures" value={String(client._count.invoices)} />
@@ -261,7 +261,7 @@ function StatTile({ label, value, accent }: { label: string; value: string; acce
   return (
     <div className="flex justify-between items-center">
       <span className="text-sm text-zinc-500">{label}</span>
-      <span className={`text-sm font-bold ${accent ? 'text-indigo-600' : 'text-zinc-900'}`}>{value}</span>
+      <span className={`text-sm font-bold ${accent ? 'text-[#378ADD]' : 'text-zinc-900'}`}>{value}</span>
     </div>
   );
 }

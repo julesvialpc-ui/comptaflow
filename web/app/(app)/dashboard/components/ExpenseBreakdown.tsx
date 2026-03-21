@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { ExpenseCategoryData } from '@/lib/types';
 import { eur } from '@/lib/format';
 
-const COLORS = ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
+const COLORS = ['#378ADD', '#9FE1CB', '#FAC775', '#F4C0D1', '#D3D1C7', '#B5D4F4', '#185FA5', '#EAF3DE'];
 
 const CATEGORY_FR: Record<string, string> = {
   OFFICE_SUPPLIES: 'Fournitures',
@@ -29,9 +29,9 @@ interface ExpenseBreakdownProps {
 export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-2 text-sm font-semibold text-zinc-700">Répartition des dépenses</h2>
-        <p className="text-sm text-zinc-400">Aucune dépense cette année.</p>
+      <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+        <h2 className="mb-2 text-[13px] font-medium" style={{ color: '#1a1a18' }}>Répartition des dépenses</h2>
+        <p className="text-[13px]" style={{ color: '#888780' }}>Aucune dépense cette année.</p>
       </div>
     );
   }
@@ -42,8 +42,8 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
   }));
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-sm font-semibold text-zinc-700">Répartition des dépenses (année)</h2>
+    <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+      <h2 className="mb-3 text-[13px] font-medium" style={{ color: '#1a1a18' }}>Répartition des dépenses</h2>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
@@ -51,7 +51,7 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
             cx="50%"
             cy="50%"
             innerRadius={55}
-            outerRadius={80}
+            outerRadius={75}
             paddingAngle={3}
             dataKey="amount"
           >
@@ -61,9 +61,9 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
           </Pie>
           <Tooltip
             formatter={(v, name) => [eur(Number(v)), String(name)]}
-            contentStyle={{ borderRadius: '8px', border: '1px solid #e4e4e7', fontSize: '13px' }}
+            contentStyle={{ borderRadius: '6px', border: '0.5px solid #E5E4E0', fontSize: '12px', background: '#FFFFFF' }}
           />
-          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px' }} />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#888780' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

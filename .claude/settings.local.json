@@ -21,7 +21,19 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(rm -rf /Users/julesvial/Documents/comptaflow/api/.git)",
-      "Bash(rm -rf /Users/julesvial/Documents/comptaflow/web/.git)"
+      "Bash(rm -rf /Users/julesvial/Documents/comptaflow/web/.git)",
+      "Bash(git commit:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''login'''']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\(''''html_url''''\\) or d.get\\(''''message''''\\)\\)\")",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(find /Users/julesvial/Documents/comptaflow/web/app -name *.css)",
+      "Bash(npx tsc:*)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(sed -i '' 's/bg-indigo-600/bg-\\\\[#378ADD\\\\]/g' \"$f\")",
+      "Bash(sed -i '' 's/hover:bg-indigo-700/hover:opacity-80/g' \"$f\")",
+      "Bash(sed -i '' 's/text-indigo-600/text-\\\\[#378ADD\\\\]/g' \"$f\")"
     ]
   }
 }

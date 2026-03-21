@@ -66,10 +66,10 @@ export default function DashboardClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-sm text-zinc-500">Chargement du dashboard…</p>
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: '#378ADD', borderTopColor: 'transparent' }} />
+          <p className="text-[13px]" style={{ color: '#888780' }}>Chargement…</p>
         </div>
       </div>
     );
@@ -77,9 +77,9 @@ export default function DashboardClient() {
 
   if (error || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm font-medium text-red-700">{error ?? 'Données indisponibles'}</p>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="rounded-lg px-6 py-4 text-center" style={{ background: '#FEF2F2', border: '0.5px solid #FECACA' }}>
+          <p className="text-[13px] font-medium" style={{ color: '#DC2626' }}>{error ?? 'Données indisponibles'}</p>
         </div>
       </div>
     );
@@ -89,105 +89,65 @@ export default function DashboardClient() {
   const { currentMonth, currentYear } = kpis;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      {/* Header */}
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
-        <div className="mx-auto max-w-7xl flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-zinc-900">ComptaFlow</h1>
-            <p className="text-xs text-zinc-400">Dashboard financier</p>
+    <div className="p-6 space-y-6">
+      {/* Page title */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[16px] font-medium" style={{ color: '#1a1a18' }}>Dashboard</h1>
+          <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>
+            {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+      </div>
+
+      {/* Alert seuil */}
+      <ThresholdAlert {...threshold} />
+
+      {/* KPIs — mois en cours */}
+      <section>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: '#888780' }}>Ce mois-ci</p>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Chiffre d'affaires" value={currentMonth.revenue} growth={currentMonth.revenueGrowth} variant="default" icon={<IconRevenue />} />
+          <StatCard label="Dépenses" value={currentMonth.expenses} growth={currentMonth.expensesGrowth} variant="danger" icon={<IconExpenses />} />
+          <StatCard label="Bénéfice net" value={currentMonth.profit} variant={currentMonth.profit >= 0 ? 'success' : 'danger'} icon={<IconProfit />} />
+          <StatCard label="Impayés" value={unpaidTotal} subtitle={overdueTotal > 0 ? `dont ${eur(overdueTotal)} en retard` : undefined} variant={overdueTotal > 0 ? 'warning' : 'default'} icon={<IconInvoice />} />
+        </div>
+      </section>
+
+      {/* KPIs — année */}
+      <section>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: '#888780' }}>Année en cours</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+            <p className="text-[11px] mb-1" style={{ color: '#888780' }}>CA annuel</p>
+            <p className="text-[18px] font-medium" style={{ color: '#185FA5' }}>{eur(currentYear.revenue)}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#888780' }}>{currentYear.invoiceCount} facture(s) payée(s)</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-zinc-400">
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+            <p className="text-[11px] mb-1" style={{ color: '#888780' }}>Charges annuelles</p>
+            <p className="text-[18px] font-medium" style={{ color: '#1a1a18' }}>{eur(currentYear.expenses)}</p>
+          </div>
+          <div className="rounded-lg p-4" style={{ background: currentYear.profit >= 0 ? '#F0F9EC' : '#FEF2F2', border: `0.5px solid ${currentYear.profit >= 0 ? '#D3EEC4' : '#FECACA'}` }}>
+            <p className="text-[11px] mb-1" style={{ color: '#888780' }}>Résultat annuel</p>
+            <p className="text-[18px] font-medium" style={{ color: currentYear.profit >= 0 ? '#3B6D11' : '#A32D2D' }}>{eur(currentYear.profit)}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#888780' }}>
+              Marge {currentYear.revenue > 0 ? Math.round((currentYear.profit / currentYear.revenue) * 100) : 0}%
             </p>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="mx-auto max-w-7xl px-6 py-8 space-y-8">
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2"><RevenueChart data={monthlyRevenue} /></div>
+        <ExpenseBreakdown data={expenseBreakdown} />
+      </div>
 
-        {/* Alert seuil */}
-        <ThresholdAlert {...threshold} />
-
-        {/* KPIs — mois en cours */}
-        <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Ce mois-ci
-          </h2>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Chiffre d'affaires"
-              value={currentMonth.revenue}
-              growth={currentMonth.revenueGrowth}
-              variant="default"
-              icon={<IconRevenue />}
-            />
-            <StatCard
-              label="Dépenses"
-              value={currentMonth.expenses}
-              growth={currentMonth.expensesGrowth}
-              variant="danger"
-              icon={<IconExpenses />}
-            />
-            <StatCard
-              label="Bénéfice net"
-              value={currentMonth.profit}
-              variant={currentMonth.profit >= 0 ? 'success' : 'danger'}
-              icon={<IconProfit />}
-            />
-            <StatCard
-              label="Impayés"
-              value={unpaidTotal}
-              subtitle={overdueTotal > 0 ? `dont ${eur(overdueTotal)} en retard` : undefined}
-              variant={overdueTotal > 0 ? 'warning' : 'default'}
-              icon={<IconInvoice />}
-            />
-          </div>
-        </section>
-
-        {/* KPIs — année */}
-        <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Année en cours
-          </h2>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <p className="text-sm text-zinc-500">CA annuel</p>
-              <p className="mt-1 text-2xl font-bold text-zinc-900">{eur(currentYear.revenue)}</p>
-              <p className="mt-1 text-xs text-zinc-400">{currentYear.invoiceCount} facture(s) payée(s)</p>
-            </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <p className="text-sm text-zinc-500">Charges annuelles</p>
-              <p className="mt-1 text-2xl font-bold text-zinc-900">{eur(currentYear.expenses)}</p>
-            </div>
-            <div className={`rounded-xl border p-5 shadow-sm ${currentYear.profit >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
-              <p className="text-sm text-zinc-500">Résultat annuel</p>
-              <p className={`mt-1 text-2xl font-bold ${currentYear.profit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {eur(currentYear.profit)}
-              </p>
-              <p className="mt-1 text-xs text-zinc-400">
-                Marge {currentYear.revenue > 0 ? Math.round((currentYear.profit / currentYear.revenue) * 100) : 0}%
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <RevenueChart data={monthlyRevenue} />
-          </div>
-          <ExpenseBreakdown data={expenseBreakdown} />
-        </div>
-
-        {/* Bottom row */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <InvoiceTable invoices={recentInvoices} />
-          <TaxDeadlines deadlines={taxDeadlines} />
-        </div>
-
-      </main>
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InvoiceTable invoices={recentInvoices} />
+        <TaxDeadlines deadlines={taxDeadlines} />
+      </div>
     </div>
   );
 }
