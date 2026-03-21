@@ -40,6 +40,8 @@ export interface Invoice {
   clientId: string | null;
   client: ClientRef | null;
   items: InvoiceItem[];
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval | null;
 }
 
 export interface Client {
@@ -55,6 +57,121 @@ export interface Client {
   vatNumber?: string | null;
   notes?: string | null;
   isActive: boolean;
+}
+
+// ─── Quote types ─────────────────────────────────────────────────────────────
+
+export type QuoteStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+
+export interface QuoteItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  vatRate: number;
+  total: number;
+}
+
+export interface Quote {
+  id: string;
+  number: string;
+  status: QuoteStatus;
+  issueDate: string;
+  expiryDate: string | null;
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  total: number;
+  notes: string | null;
+  clientId: string | null;
+  client: ClientRef | null;
+  items: QuoteItem[];
+  convertedInvoiceId: string | null;
+}
+
+// ─── Time Entry types ────────────────────────────────────────────────────────
+
+export interface TimeEntry {
+  id: string;
+  clientId: string | null;
+  client: { id: string; name: string } | null;
+  description: string;
+  date: string;
+  hours: number;
+  hourlyRate: number;
+  total: number;
+  isBilled: boolean;
+  invoiceId: string | null;
+  createdAt: string;
+}
+
+export interface TimeEntryStats {
+  totalHours: number;
+  totalAmount: number;
+  totalCount: number;
+  monthHours: number;
+  monthAmount: number;
+  unbilledHours: number;
+  unbilledAmount: number;
+  unbilledCount: number;
+}
+
+// ─── Category Budget types ───────────────────────────────────────────────────
+
+export interface CategoryBudget {
+  id: string;
+  category: string;
+  amount: number;
+  period: string;
+  currentSpend: number;
+  percentage: number;
+}
+
+// ─── Notification types ──────────────────────────────────────────────────────
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  link: string | null;
+  createdAt: string;
+}
+
+// ─── Forecast types ──────────────────────────────────────────────────────────
+
+export interface ForecastMonth {
+  month: string;
+  projectedRevenue: number;
+  projectedExpenses: number;
+  projectedProfit: number;
+}
+
+// ─── IR Estimate types ───────────────────────────────────────────────────────
+
+export interface IrEstimate {
+  yearRevenue: number;
+  activityType: string;
+  abatement: number;
+  taxableIncome: number;
+  irEstimate: number;
+  urssafDeductible: number;
+  netAfterTax: number;
+  disclaimer: string;
+}
+
+// ─── Client Stats types ─────────────────────────────────────────────────────
+
+export interface ClientStats {
+  totalRevenue: number;
+  invoiceCount: number;
+  paidCount: number;
+  pendingCount: number;
+  averagePaymentDays: number;
+  topInvoice: number;
+  monthlyRevenue: { month: string; revenue: number }[];
+  lastInvoiceDate: string | null;
 }
 
 // ─── Expense types ────────────────────────────────────────────────────────────
@@ -275,6 +392,13 @@ export interface DashboardData {
       profit: number;
       invoiceCount: number;
     };
+    previousYear?: {
+      revenue: number;
+      expenses: number;
+      profit: number;
+      invoiceCount: number;
+    };
+    yearGrowth?: number | null;
   };
   invoiceStats: Record<string, { count: number; total: number }>;
   unpaidTotal: number;

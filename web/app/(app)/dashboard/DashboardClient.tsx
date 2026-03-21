@@ -12,6 +12,8 @@ import { InvoiceTable } from './components/InvoiceTable';
 import { TaxDeadlines } from './components/TaxDeadlines';
 import { ThresholdAlert } from './components/ThresholdAlert';
 import { UrssafWidget } from './components/UrssafWidget';
+import { ForecastWidget } from './components/ForecastWidget';
+import { IrEstimateWidget } from './components/IrEstimateWidget';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 
@@ -123,7 +125,20 @@ export default function DashboardClient() {
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
             <p className="text-[11px] mb-1" style={{ color: '#888780' }}>CA annuel</p>
-            <p className="text-[18px] font-medium" style={{ color: '#185FA5' }}>{eur(currentYear.revenue)}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[18px] font-medium" style={{ color: '#185FA5' }}>{eur(currentYear.revenue)}</p>
+              {kpis.yearGrowth != null && (
+                <span
+                  className="inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    background: kpis.yearGrowth >= 0 ? '#F0F9EC' : '#FEF2F2',
+                    color: kpis.yearGrowth >= 0 ? '#3B6D11' : '#DC2626',
+                  }}
+                >
+                  {kpis.yearGrowth > 0 ? '+' : ''}{kpis.yearGrowth}%
+                </span>
+              )}
+            </div>
             <p className="text-[10px] mt-0.5" style={{ color: '#888780' }}>{currentYear.invoiceCount} facture(s) payée(s)</p>
           </div>
           <div className="rounded-lg p-4" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
@@ -148,6 +163,12 @@ export default function DashboardClient() {
           <ExpenseBreakdown data={expenseBreakdown} />
           <RevenuePieChart data={revenueBreakdown} />
         </div>
+      </div>
+
+      {/* Forecast & IR */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <ForecastWidget />
+        <IrEstimateWidget />
       </div>
 
       {/* Bottom row */}

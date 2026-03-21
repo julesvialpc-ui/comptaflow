@@ -16,7 +16,13 @@ import {
   apiCreateUserCategory,
   apiDeleteUserCategory,
 } from '@/lib/user-categories';
-import { Business, BusinessType, Subscription, UserCategory } from '@/lib/types';
+import { Business, BusinessType, Subscription, UserCategory, CategoryBudget, ExpenseCategory } from '@/lib/types';
+import {
+  apiGetCategoryBudgets,
+  apiUpsertCategoryBudget,
+  apiDeleteCategoryBudget,
+} from '@/lib/category-budgets';
+import { eur } from '@/lib/format';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -60,7 +66,8 @@ const PLAN_META: Record<string, { label: string; color: string; features: string
 const TABS = [
   { id: 'profile',      label: 'Profil' },
   { id: 'business',     label: 'Entreprise' },
-  { id: 'categories',   label: 'Catégories' },
+  { id: 'categories',   label: 'Cat\u00e9gories' },
+  { id: 'budgets',      label: 'Budgets' },
   { id: 'subscription', label: 'Abonnement' },
 ] as const;
 type TabId = typeof TABS[number]['id'];
@@ -745,6 +752,167 @@ function CategoriesTab({ token }: { token: string }) {
   );
 }
 
+// ─── Budgets tab ─────────────────────────────────────────────────────────────
+
+const BUDGET_CAT_LABELS: Record<string, string> = {
+  OFFICE_SUPPLIES: 'Fournitures',
+  TRAVEL: 'D\u00e9placements',
+  MEALS: 'Repas',
+  EQUIPMENT: 'Mat\u00e9riel',
+  SOFTWARE: 'Logiciels',
+  MARKETING: 'Marketing',
+  PROFESSIONAL_FEES: 'Honoraires',
+  RENT: 'Loyer',
+  UTILITIES: 'Charges',
+  INSURANCE: 'Assurance',
+  TAXES: 'Imp\u00f4ts',
+  SALARY: 'Salaires',
+  OTHER: 'Autre',
+};
+
+const BUDGET_CATEGORIES = Object.keys(BUDGET_CAT_LABELS) as ExpenseCategory[];
+
+function BudgetsTab({ token }: { token: string }) {
+  const [budgets, setBudgets] = useState<CategoryBudget[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newCategory, setNewCategory] = useState<ExpenseCategory>('OTHER');
+  const [newAmount, setNewAmount] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  useEffect(() => {
+    apiGetCategoryBudgets(token)
+      .then(setBudgets)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  async function handleCreate(e: FormEvent) {
+    e.preventDefault();
+    const amt = parseFloat(newAmount);
+    if (!amt || amt <= 0) { setAlert({ type: 'error', msg: 'Montant invalide.' }); return; }
+    setSaving(true);
+    setAlert(null);
+    try {
+      const created = await apiUpsertCategoryBudget(token, { category: newCategory, amount: amt, period: 'MONTHLY' });
+      setBudgets(prev => {
+        const exists = prev.findIndex(b => b.category === created.category);
+        if (exists >= 0) {
+          return prev.map((b, i) => i === exists ? created : b);
+        }
+        return [...prev, created];
+      });
+      setNewAmount('');
+      setAlert({ type: 'success', msg: 'Budget enregistr\u00e9.' });
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Supprimer ce budget ?')) return;
+    try {
+      await apiDeleteCategoryBudget(token, id);
+      setBudgets(prev => prev.filter(b => b.id !== id));
+    } catch (err) {
+      setAlert({ type: 'error', msg: err instanceof Error ? err.message : 'Erreur' });
+    }
+  }
+
+  function barColor(pct: number) {
+    if (pct > 90) return '#DC2626';
+    if (pct > 70) return '#F59E0B';
+    return '#3B6D11';
+  }
+
+  if (loading) return (
+    <div className="flex items-center gap-2 text-sm text-zinc-400">
+      <span className="h-4 w-4 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin"/>Chargement\u2026
+    </div>
+  );
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <SectionTitle>Budgets par cat\u00e9gorie</SectionTitle>
+        <p className="text-xs text-zinc-400 -mt-2 mb-4">
+          Les budgets sont calcul\u00e9s sur le mois en cours.
+        </p>
+      </div>
+
+      {alert && <Alert type={alert.type} message={alert.msg} onClose={() => setAlert(null)} />}
+
+      {/* Budget list */}
+      <div className="space-y-3">
+        {budgets.length === 0 && (
+          <p className="text-sm text-zinc-400">Aucun budget d\u00e9fini.</p>
+        )}
+        {budgets.map(b => {
+          const pct = b.percentage ?? 0;
+          return (
+            <div key={b.id} className="rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-sm font-medium text-zinc-800">{BUDGET_CAT_LABELS[b.category] ?? b.category}</span>
+                  <span className="text-xs text-zinc-400 ml-2">{eur(b.currentSpend ?? 0)} / {eur(b.amount)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold tabular-nums" style={{ color: barColor(pct) }}>
+                    {Math.round(pct)}%
+                  </span>
+                  <button onClick={() => handleDelete(b.id)}
+                    className="rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition" title="Supprimer">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-zinc-200">
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(pct, 100)}%`, background: barColor(pct) }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add budget form */}
+      <form onSubmit={handleCreate} className="rounded-lg border border-zinc-200 bg-white p-4 space-y-3">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Ajouter un budget</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Cat\u00e9gorie</label>
+            <select value={newCategory} onChange={(e) => setNewCategory(e.target.value as ExpenseCategory)}
+              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#378ADD] focus:border-transparent">
+              {BUDGET_CATEGORIES.map(c => (
+                <option key={c} value={c}>{BUDGET_CAT_LABELS[c]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Budget mensuel (\u20ac)</label>
+            <input type="number" min="0" step="10" value={newAmount}
+              onChange={(e) => setNewAmount(e.target.value)}
+              placeholder="500"
+              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#378ADD] focus:border-transparent" />
+          </div>
+        </div>
+        <button type="submit" disabled={saving || !newAmount}
+          className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition">
+          {saving && <span className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+          Enregistrer
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -790,6 +958,7 @@ export default function SettingsPage() {
         {tab === 'profile'      && <ProfileTab token={token} />}
         {tab === 'business'     && <BusinessTab token={token} />}
         {tab === 'categories'   && <CategoriesTab token={token} />}
+        {tab === 'budgets'      && <BudgetsTab token={token} />}
         {tab === 'subscription' && <SubscriptionTab token={token} />}
       </div>
     </div>

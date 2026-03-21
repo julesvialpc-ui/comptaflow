@@ -161,6 +161,59 @@ export class InvoicesService {
     return this.prisma.invoice.delete({ where: { id } });
   }
 
+  // ── Recurring ────────────────────────────────────────────────────────────
+
+  findRecurring(businessId: string) {
+    return this.prisma.invoice.findMany({
+      where: { businessId, isRecurring: true },
+      include: {
+        client: { select: { id: true, name: true, email: true } },
+        items: true,
+      },
+      orderBy: { issueDate: 'desc' },
+    });
+  }
+
+  async generateNext(id: string, businessId: string) {
+    const invoice = await this.findOne(id, businessId);
+    if (!invoice.isRecurring) {
+      throw new NotFoundException('Invoice is not recurring');
+    }
+
+    const newNumber = await this.generateNumber(businessId);
+
+    return this.prisma.invoice.create({
+      data: {
+        businessId,
+        clientId: invoice.clientId,
+        number: newNumber,
+        status: 'DRAFT',
+        issueDate: new Date(),
+        dueDate: invoice.dueDate
+          ? new Date(Date.now() + (new Date(invoice.dueDate).getTime() - new Date(invoice.issueDate).getTime()))
+          : null,
+        subtotal: invoice.subtotal,
+        vatRate: invoice.vatRate,
+        vatAmount: invoice.vatAmount,
+        total: invoice.total,
+        notes: invoice.notes,
+        paymentTerms: invoice.paymentTerms,
+        isRecurring: true,
+        recurrenceInterval: invoice.recurrenceInterval,
+        items: {
+          create: invoice.items.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            vatRate: item.vatRate,
+            total: item.total,
+          })),
+        },
+      },
+      include: { client: true, items: true },
+    });
+  }
+
   // ── PDF ───────────────────────────────────────────────────────────────────
 
   async generatePdf(id: string, businessId: string): Promise<Buffer> {

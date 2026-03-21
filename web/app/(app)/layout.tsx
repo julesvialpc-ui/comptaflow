@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { AppNotification } from '@/lib/types';
+import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '@/lib/notifications';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -32,6 +35,16 @@ const NAV_MAIN = [
     ),
   },
   {
+    href: '/quotes',
+    label: 'Devis',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: '/clients',
     label: 'Clients',
     icon: (
@@ -52,8 +65,18 @@ const NAV_MAIN = [
     ),
   },
   {
+    href: '/time-tracking',
+    label: 'Temps',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: '/expenses',
-    label: 'Dépenses',
+    label: 'D\u00e9penses',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -116,9 +139,43 @@ function initials(name: string | null, email: string) {
 
 // ─── Sidebar content ──────────────────────────────────────────────────────────
 
+function relativeTime(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return '\u00e0 l\u2019instant';
+  if (mins < 60) return `il y a ${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `il y a ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `il y a ${days}j`;
+}
+
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { theme, toggle: toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (!t) return;
+    apiGetNotifications(t).then(setNotifications).catch(() => {});
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  async function handleMarkRead(id: string) {
+    const t = localStorage.getItem('accessToken') ?? '';
+    await apiMarkNotificationRead(t, id).catch(() => {});
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  }
+
+  async function handleMarkAllRead() {
+    const t = localStorage.getItem('accessToken') ?? '';
+    await apiMarkAllNotificationsRead(t).catch(() => {});
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -201,6 +258,101 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           <span>{NAV_SETTINGS.icon}</span>
           {NAV_SETTINGS.label}
         </Link>
+
+        {/* Notification bell + Dark mode toggle */}
+        <div className="flex items-center gap-1 px-3 py-1.5 mb-1">
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifs(v => !v)}
+              className="rounded-md p-1.5 transition-colors"
+              style={{ color: '#888780' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
+              title="Notifications"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 01-3.46 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                  style={{ background: '#DC2626' }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification dropdown */}
+            {showNotifs && (
+              <div
+                className="absolute bottom-full left-0 mb-1 w-72 rounded-lg shadow-lg z-50"
+                style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}
+              >
+                <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '0.5px solid #E5E4E0' }}>
+                  <span className="text-[12px] font-medium" style={{ color: '#1a1a18' }}>Notifications</span>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-[11px] font-medium" style={{ color: '#378ADD' }}>
+                      Tout lire
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="px-3 py-4 text-center text-[12px]" style={{ color: '#888780' }}>Aucune notification</p>
+                  ) : (
+                    notifications.slice(0, 5).map(n => (
+                      <button
+                        key={n.id}
+                        onClick={() => {
+                          handleMarkRead(n.id);
+                          if (n.link) { setShowNotifs(false); window.location.href = n.link; }
+                        }}
+                        className="w-full text-left px-3 py-2.5 transition-colors hover:bg-zinc-50"
+                        style={{ borderBottom: '0.5px solid #F0F0EE' }}
+                      >
+                        <div className="flex items-start gap-2">
+                          {!n.isRead && (
+                            <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#378ADD' }} />
+                          )}
+                          <div className={!n.isRead ? '' : 'ml-3.5'}>
+                            <p className="text-[12px] font-medium" style={{ color: '#1a1a18' }}>{n.title}</p>
+                            <p className="text-[11px]" style={{ color: '#888780' }}>{n.message}</p>
+                            <p className="text-[10px] mt-0.5" style={{ color: '#888780' }}>{relativeTime(n.createdAt)}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={toggleTheme}
+            className="rounded-md p-1.5 transition-colors"
+            style={{ color: '#888780' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
+            title={theme === 'light' ? 'Mode sombre' : 'Mode clair'}
+          >
+            {theme === 'light' ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            )}
+          </button>
+        </div>
 
         <div className="flex items-center gap-2.5 px-3 py-2">
           <div

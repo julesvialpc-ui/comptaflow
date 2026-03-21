@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, ForbiddenException } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -42,5 +42,11 @@ export class NotificationsController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.notificationsService.remove(id, user.id);
+  }
+
+  @Post('generate')
+  generate(@CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.notificationsService.generate(user.id, user.businessId);
   }
 }

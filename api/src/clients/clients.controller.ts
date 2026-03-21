@@ -34,6 +34,12 @@ export class ClientsController {
     return this.clientsService.findOne(id, user.businessId);
   }
 
+  @Get(':id/stats')
+  getStats(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.clientsService.getStats(id, user.businessId);
+  }
+
   @Post()
   create(@Body() dto: CreateClientDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');

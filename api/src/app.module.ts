@@ -17,6 +17,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { UserCategoriesModule } from './user-categories/user-categories.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { CategoryBudgetsModule } from './category-budgets/category-budgets.module';
+import { TimeEntriesModule } from './time-entries/time-entries.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -36,6 +39,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ChatModule,
     SubscriptionsModule,
     UserCategoriesModule,
+    QuotesModule,
+    CategoryBudgetsModule,
+    TimeEntriesModule,
   ],
   controllers: [AppController],
   providers: [

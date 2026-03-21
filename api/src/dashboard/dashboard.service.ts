@@ -228,6 +228,31 @@ export class DashboardService {
     const yearRevenue = yearRevenuesTotal;
     const thresholdProgress = Math.min(Math.round((yearRevenue / MICRO_THRESHOLD_SERVICES) * 100), 100);
 
+    // ─── Previous year (Feature 5) ─────────────────────────────────────────
+    const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
+    const prevYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+
+    const [prevYearInvoices, prevYearExpenses, prevYearRevenues] = await Promise.all([
+      this.prisma.invoice.aggregate({
+        where: { businessId, status: 'PAID', paidAt: { gte: prevYearStart, lte: prevYearEnd } },
+        _sum: { total: true },
+        _count: true,
+      }),
+      this.prisma.expense.aggregate({
+        where: { businessId, date: { gte: prevYearStart, lte: prevYearEnd } },
+        _sum: { amount: true },
+      }),
+      this.prisma.revenue.aggregate({
+        where: { businessId, date: { gte: prevYearStart, lte: prevYearEnd } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const prevRevenue = (prevYearInvoices._sum.total ?? 0) + (prevYearRevenues._sum.amount ?? 0);
+    const prevExpensesTotal = prevYearExpenses._sum.amount ?? 0;
+    const prevProfit = prevRevenue - prevExpensesTotal;
+    const yearGrowth = prevRevenue > 0 ? Math.round(((yearRevenue - prevRevenue) / prevRevenue) * 100) : null;
+
     return {
       kpis: {
         currentMonth: {
@@ -244,6 +269,13 @@ export class DashboardService {
           profit: yearRevenue - yearExpensesTotal,
           invoiceCount: yearInvoices._count,
         },
+        previousYear: {
+          revenue: prevRevenue,
+          expenses: prevExpensesTotal,
+          profit: prevProfit,
+          invoiceCount: prevYearInvoices._count,
+        },
+        yearGrowth,
       },
       invoiceStats,
       unpaidTotal,
@@ -360,6 +392,110 @@ export class DashboardService {
       declarationDeadline: deadline.toISOString().slice(0, 10),
       daysUntilDeadline,
       previousQuarters,
+    };
+  }
+
+  // ─── Forecast (Feature 6) ──────────────────────────────────────────────
+
+  async getForecast(businessId: string) {
+    const now = new Date();
+
+    // Get last 3 months revenue and expenses
+    const months: { revenue: number; expenses: number }[] = [];
+    for (let i = 3; i >= 1; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+
+      const [inv, rev, exp] = await Promise.all([
+        this.prisma.invoice.aggregate({
+          where: { businessId, status: 'PAID', paidAt: { gte: start, lte: end } },
+          _sum: { total: true },
+        }),
+        this.prisma.revenue.aggregate({
+          where: { businessId, date: { gte: start, lte: end } },
+          _sum: { amount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { businessId, date: { gte: start, lte: end } },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      months.push({
+        revenue: (inv._sum.total ?? 0) + (rev._sum.amount ?? 0),
+        expenses: exp._sum.amount ?? 0,
+      });
+    }
+
+    const avgRevenue = months.reduce((s, m) => s + m.revenue, 0) / 3;
+    const avgExpenses = months.reduce((s, m) => s + m.expenses, 0) / 3;
+
+    // Get recurring amounts
+    const [recurringRevenues, recurringExpenses] = await Promise.all([
+      this.prisma.revenue.aggregate({
+        where: { businessId, isRecurring: true },
+        _sum: { amount: true },
+      }),
+      this.prisma.expense.aggregate({
+        where: { businessId, isRecurring: true },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const recurringRev = recurringRevenues._sum.amount ?? 0;
+    const recurringExp = recurringExpenses._sum.amount ?? 0;
+
+    const forecast: { month: string; projectedRevenue: number; projectedExpenses: number; projectedProfit: number }[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const projectedRevenue = Math.round((avgRevenue + recurringRev) * 100) / 100;
+      const projectedExpenses = Math.round((avgExpenses + recurringExp) * 100) / 100;
+      forecast.push({
+        month,
+        projectedRevenue,
+        projectedExpenses,
+        projectedProfit: Math.round((projectedRevenue - projectedExpenses) * 100) / 100,
+      });
+    }
+
+    return forecast;
+  }
+
+  // ─── IR Estimate (Feature 7) ──────────────────────────────────────────
+
+  async getIrEstimate(businessId: string) {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const [invoices, revenues] = await Promise.all([
+      this.prisma.invoice.aggregate({
+        where: { businessId, status: 'PAID', paidAt: { gte: yearStart } },
+        _sum: { total: true },
+      }),
+      this.prisma.revenue.aggregate({
+        where: { businessId, date: { gte: yearStart } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const yearRevenue = (invoices._sum.total ?? 0) + (revenues._sum.amount ?? 0);
+    const abatement = 0.34; // BNC default
+    const taxableIncome = yearRevenue * (1 - abatement);
+    const irEstimate = Math.round(taxableIncome * 0.22 * 100) / 100;
+    const urssafRate = 0.212;
+    const urssafDeductible = Math.round(yearRevenue * urssafRate * 100) / 100;
+    const netAfterTax = Math.round((yearRevenue - irEstimate - urssafDeductible) * 100) / 100;
+
+    return {
+      yearRevenue: Math.round(yearRevenue * 100) / 100,
+      activityType: 'SERVICES',
+      abatement: abatement * 100,
+      taxableIncome: Math.round(taxableIncome * 100) / 100,
+      irEstimate,
+      urssafDeductible,
+      netAfterTax,
+      disclaimer: 'Estimation indicative. Consultez un expert-comptable pour votre situation personnelle.',
     };
   }
 

@@ -1,4 +1,4 @@
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, RecurrenceInterval } from '@prisma/client';
 import { CreateInvoiceItemDto } from './create-invoice.dto';
 
 export class UpdateInvoiceDto {
@@ -10,5 +10,7 @@ export class UpdateInvoiceDto {
   notes?: string;
   paymentTerms?: string;
   pdfUrl?: string;
+  isRecurring?: boolean;
+  recurrenceInterval?: RecurrenceInterval;
   items?: CreateInvoiceItemDto[];
 }

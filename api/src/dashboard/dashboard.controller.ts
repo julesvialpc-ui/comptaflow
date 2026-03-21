@@ -18,4 +18,16 @@ export class DashboardController {
     if (!user.businessId) throw new ForbiddenException('No business associated');
     return this.dashboardService.getUrssaf(user.businessId);
   }
+
+  @Get('forecast')
+  getForecast(@CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.dashboardService.getForecast(user.businessId);
+  }
+
+  @Get('ir-estimate')
+  getIrEstimate(@CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.dashboardService.getIrEstimate(user.businessId);
+  }
 }

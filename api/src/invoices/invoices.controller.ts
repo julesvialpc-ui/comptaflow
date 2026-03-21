@@ -29,6 +29,13 @@ export class InvoicesController {
     return this.invoicesService.generateNumber(user.businessId).then((number) => ({ number }));
   }
 
+  // ── Recurring invoices ──────────────────────────────────────────────────
+  @Get('recurring')
+  findRecurring(@CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.invoicesService.findRecurring(user.businessId);
+  }
+
   // ── List ──────────────────────────────────────────────────────────────────
   @Get()
   findAll(
@@ -98,6 +105,13 @@ export class InvoicesController {
   ) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
     return this.invoicesService.updateStatus(id, user.businessId, status);
+  }
+
+  // ── Generate next recurring ─────────────────────────────────────────────
+  @Post(':id/generate-next')
+  generateNext(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.invoicesService.generateNext(id, user.businessId);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

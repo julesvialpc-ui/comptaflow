@@ -33,6 +33,14 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -94,6 +102,10 @@ enum NotificationType {
   EXPENSE_REMINDER
   SYSTEM
   AI_INSIGHT
+  INVOICE_OVERDUE
+  URSSAF_DEADLINE
+  BUDGET_EXCEEDED
+  THRESHOLD_WARNING
 }
 
 enum SubscriptionPlan {
@@ -157,14 +169,17 @@ model Business {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clients        Client[]
-  invoices       Invoice[]
-  transactions   Transaction[]
-  expenses       Expense[]
-  taxReports     TaxReport[]
-  revenues       Revenue[]
-  userCategories UserCategory[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clients          Client[]
+  invoices         Invoice[]
+  transactions     Transaction[]
+  expenses         Expense[]
+  taxReports       TaxReport[]
+  revenues         Revenue[]
+  userCategories   UserCategory[]
+  quotes           Quote[]
+  categoryBudgets  CategoryBudget[]
+  timeEntries      TimeEntry[]
 
   @@map("businesses")
 }
@@ -186,8 +201,10 @@ model Client {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  invoices Invoice[]
+  business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+  quotes      Quote[]
+  timeEntries TimeEntry[]
 
   @@map("clients")
 }
@@ -209,6 +226,8 @@ model Invoice {
   paymentTerms  String?
   pdfUrl        String?
   stripeId      String?
+  isRecurring        Boolean             @default(false)
+  recurrenceInterval RecurrenceInterval?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -234,6 +253,44 @@ model InvoiceItem {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("invoice_items")
+}
+
+model Quote {
+  id                 String      @id @default(cuid())
+  businessId         String
+  clientId           String?
+  number             String
+  status             QuoteStatus @default(DRAFT)
+  issueDate          DateTime    @default(now())
+  expiryDate         DateTime?
+  subtotal           Float       @default(0)
+  vatRate            Float       @default(0)
+  vatAmount          Float       @default(0)
+  total              Float       @default(0)
+  notes              String?
+  convertedInvoiceId String?     @unique
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  business Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  items    QuoteItem[]
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float  @default(0)
+  vatRate     Float  @default(0)
+  total       Float  @default(0)
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@map("quote_items")
 }
 
 model Transaction {
@@ -319,6 +376,41 @@ model UserCategory {
   @@map("user_categories")
 }
 
+model CategoryBudget {
+  id         String   @id @default(cuid())
+  businessId String
+  category   String
+  amount     Float
+  period     String   @default("MONTHLY")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, category, period])
+  @@map("category_budgets")
+}
+
+model TimeEntry {
+  id          String   @id @default(cuid())
+  businessId  String
+  clientId    String?
+  description String
+  date        DateTime
+  hours       Float
+  hourlyRate  Float
+  total       Float
+  isBilled    Boolean  @default(false)
+  invoiceId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@map("time_entries")
+}
+
 model TaxReport {
   id          String          @id @default(uuid())
   businessId  String
@@ -347,6 +439,7 @@ model Notification {
   message   String
   isRead    Boolean          @default(false)
   readAt    DateTime?
+  link      String?
   metadata  Json?
   createdAt DateTime         @default(now())
 
