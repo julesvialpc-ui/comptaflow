@@ -21,8 +21,12 @@ export class DashboardService {
       currentMonthExpenses,
       lastMonthExpenses,
       yearExpenses,
+      currentMonthRevenues,
+      lastMonthRevenues,
+      yearRevenues,
       invoiceStatusCounts,
       allExpenses,
+      allRevenues,
       recentInvoices,
       taxDeadlines,
       monthlyData,
@@ -59,6 +63,21 @@ export class DashboardService {
         where: { businessId, date: { gte: yearStart } },
         _sum: { amount: true },
       }),
+      // Revenues table current month
+      this.prisma.revenue.aggregate({
+        where: { businessId, date: { gte: currentMonthStart } },
+        _sum: { amount: true },
+      }),
+      // Revenues table last month
+      this.prisma.revenue.aggregate({
+        where: { businessId, date: { gte: lastMonthStart, lte: lastMonthEnd } },
+        _sum: { amount: true },
+      }),
+      // Revenues table this year
+      this.prisma.revenue.aggregate({
+        where: { businessId, date: { gte: yearStart } },
+        _sum: { amount: true },
+      }),
       // Invoice counts by status
       this.prisma.invoice.groupBy({
         by: ['status'],
@@ -68,6 +87,13 @@ export class DashboardService {
       }),
       // All year expenses by category
       this.prisma.expense.groupBy({
+        by: ['category'],
+        where: { businessId, date: { gte: yearStart } },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+      }),
+      // All year revenues by category
+      this.prisma.revenue.groupBy({
         by: ['category'],
         where: { businessId, date: { gte: yearStart } },
         _sum: { amount: true },
@@ -92,8 +118,8 @@ export class DashboardService {
 
     // ─── KPIs ──────────────────────────────────────────────────────────────
 
-    const curRevenue = currentMonthInvoices._sum.total ?? 0;
-    const lastRevenue = lastMonthInvoices._sum.total ?? 0;
+    const curRevenue = (currentMonthInvoices._sum.total ?? 0) + (currentMonthRevenues._sum.amount ?? 0);
+    const lastRevenue = (lastMonthInvoices._sum.total ?? 0) + (lastMonthRevenues._sum.amount ?? 0);
     const curExpenses = currentMonthExpenses._sum.amount ?? 0;
     const lastExpenses = lastMonthExpenses._sum.amount ?? 0;
 
@@ -127,6 +153,16 @@ export class DashboardService {
           : 0,
     }));
 
+    const yearRevenuesTotal = (yearInvoices._sum.total ?? 0) + (yearRevenues._sum.amount ?? 0);
+    const revenueBreakdown = allRevenues.map((r) => ({
+      category: r.category,
+      amount: r._sum.amount ?? 0,
+      percentage:
+        yearRevenuesTotal > 0
+          ? Math.round(((r._sum.amount ?? 0) / yearRevenuesTotal) * 100)
+          : 0,
+    }));
+
     // ─── Tax deadlines ─────────────────────────────────────────────────────
 
     const deadlines = taxDeadlines.map((t) => ({
@@ -143,8 +179,7 @@ export class DashboardService {
     // ─── Threshold alert (micro-enterprise 2024) ───────────────────────────
 
     const MICRO_THRESHOLD_SERVICES = 77700;
-    const MICRO_THRESHOLD_GOODS = 188700;
-    const yearRevenue = yearInvoices._sum.total ?? 0;
+    const yearRevenue = yearRevenuesTotal;
     const thresholdProgress = Math.min(Math.round((yearRevenue / MICRO_THRESHOLD_SERVICES) * 100), 100);
 
     return {
@@ -178,6 +213,7 @@ export class DashboardService {
       })),
       taxDeadlines: deadlines,
       expenseBreakdown,
+      revenueBreakdown,
       monthlyRevenue: monthlyData,
       threshold: {
         yearRevenue,

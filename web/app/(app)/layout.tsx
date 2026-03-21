@@ -42,22 +42,22 @@ const NAV_MAIN = [
     ),
   },
   {
-    href: '/expenses',
-    label: 'Dépenses',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-        <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-    ),
-  },
-  {
     href: '/revenues',
     label: 'Revenus',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
         <rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    href: '/expenses',
+    label: 'Dépenses',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
       </svg>
     ),
   },

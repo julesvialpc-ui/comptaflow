@@ -243,6 +243,7 @@ export interface DashboardData {
   recentInvoices: InvoiceRow[];
   taxDeadlines: TaxDeadline[];
   expenseBreakdown: ExpenseCategoryData[];
+  revenueBreakdown: ExpenseCategoryData[];
   monthlyRevenue: MonthlyPoint[];
   threshold: {
     yearRevenue: number;

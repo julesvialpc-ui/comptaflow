@@ -6,6 +6,7 @@ import { eur } from '@/lib/format';
 import { StatCard } from './components/StatCard';
 import { RevenueChart } from './components/RevenueChart';
 import { ExpenseBreakdown } from './components/ExpenseBreakdown';
+import { RevenuePieChart } from './components/RevenuePieChart';
 import { FinancialPieChart } from './components/FinancialPieChart';
 import { InvoiceTable } from './components/InvoiceTable';
 import { TaxDeadlines } from './components/TaxDeadlines';
@@ -86,7 +87,7 @@ export default function DashboardClient() {
     );
   }
 
-  const { kpis, unpaidTotal, overdueTotal, recentInvoices, taxDeadlines, expenseBreakdown, monthlyRevenue, threshold } = data;
+  const { kpis, unpaidTotal, overdueTotal, recentInvoices, taxDeadlines, expenseBreakdown, revenueBreakdown, monthlyRevenue, threshold } = data;
   const { currentMonth, currentYear } = kpis;
 
   return (
@@ -139,11 +140,12 @@ export default function DashboardClient() {
       </section>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <div className="lg:col-span-2"><RevenueChart data={monthlyRevenue} /></div>
-        <div className="space-y-3">
+      <div className="space-y-3">
+        <RevenueChart data={monthlyRevenue} />
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <FinancialPieChart revenue={currentYear.revenue} expenses={currentYear.expenses} />
           <ExpenseBreakdown data={expenseBreakdown} />
+          <RevenuePieChart data={revenueBreakdown} />
         </div>
       </div>
 
