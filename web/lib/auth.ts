@@ -5,12 +5,26 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface UserSubscription {
+  plan: 'FREE' | 'PRO' | 'BUSINESS';
+  status: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'TRIALING' | 'INACTIVE';
+}
+
 export interface AuthUser {
   id: string;
   email: string;
   name: string | null;
   businessId: string | null;
   role: string;
+  subscription?: UserSubscription | null;
+}
+
+export function getActivePlan(user: AuthUser | null): 'FREE' | 'PRO' | 'BUSINESS' {
+  if (!user?.subscription) return 'FREE';
+  if (user.subscription.status === 'ACTIVE' || user.subscription.status === 'TRIALING') {
+    return user.subscription.plan;
+  }
+  return 'FREE';
 }
 
 export interface LoginPayload {

@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiGetClients, apiToggleActive, apiDeleteClient, ClientWithStats } from '@/lib/clients';
 import { eur } from '@/lib/format';
+import { getActivePlan } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
+import UpgradeModal from '@/components/UpgradeModal';
 
 function token() {
   return typeof window !== 'undefined' ? (localStorage.getItem('accessToken') ?? '') : '';
@@ -34,12 +38,16 @@ function Avatar({ name }: { name: string }) {
 
 export default function ClientsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const plan = getActivePlan(user);
   const [clients, setClients] = useState<ClientWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<PlanUsage | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -57,6 +65,13 @@ export default function ClientsPage() {
   }, [debouncedSearch, router]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (plan !== 'FREE') return;
+    const t = token();
+    if (!t) return;
+    apiGetUsage(t).then(setUsage).catch(() => {});
+  }, [plan]);
 
   const displayed = showInactive ? clients : clients.filter((c) => c.isActive);
 
@@ -85,9 +100,16 @@ export default function ClientsPage() {
 
   const active = clients.filter((c) => c.isActive).length;
   const inactive = clients.filter((c) => !c.isActive).length;
+  const atClientLimit = plan === 'FREE' && usage?.limits && usage.usage.clientsTotal >= usage.limits.clientsTotal;
 
   return (
     <div className="p-6 space-y-4">
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Limite de clients atteinte"
+        description={`Vous avez atteint la limite de ${usage?.limits?.clientsTotal ?? 10} clients. Passez au plan Pro pour des clients illimités.`}
+      />
       {/* Header */}
       <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -96,17 +118,35 @@ export default function ClientsPage() {
             <p className="text-sm text-zinc-500">
               {active} actif{active !== 1 ? 's' : ''}
               {inactive > 0 && ` · ${inactive} archivé${inactive !== 1 ? 's' : ''}`}
+              {plan === 'FREE' && usage?.limits && (
+                <span
+                  className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{ background: atClientLimit ? '#FEE2E2' : '#F5F5F3', color: atClientLimit ? '#DC2626' : '#888780' }}
+                >
+                  {usage.usage.clientsTotal}/{usage.limits.clientsTotal} clients
+                </span>
+              )}
             </p>
           </div>
-          <Link
-            href="/clients/new"
-            className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nouveau client
-          </Link>
+          {atClientLimit ? (
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+              style={{ background: '#185FA5' }}
+            >
+              ✦ Passer au Pro
+            </button>
+          ) : (
+            <Link
+              href="/clients/new"
+              className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nouveau client
+            </Link>
+          )}
         </div>
       </header>
 

@@ -1,5 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import { BusinessType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+// ─── Taux par statut juridique (2024) ────────────────────────────────────────
+
+// Cotisations sociales sur CA (auto-entrepreneurs) ou estimation rémunération
+const URSSAF_RATES: Record<BusinessType, number> = {
+  AUTO_ENTREPRENEUR: 0.212,  // BNC prestations libérales
+  EI:    0.212,              // micro-BNC
+  EIRL:  0.212,
+  EURL:  0.45,               // gérant TNS majoritaire (estimation)
+  SARL:  0.45,               // gérant TNS majoritaire
+  SAS:   0.25,               // assimilé salarié (estimation)
+  SASU:  0.25,
+  SA:    0.25,
+  OTHER: 0.212,
+};
+
+// Abattement forfaitaire IR (régime micro)
+const ABATEMENT_RATES: Record<BusinessType, number> = {
+  AUTO_ENTREPRENEUR: 0.34,  // BNC
+  EI:    0.34,
+  EIRL:  0.34,
+  EURL:  0.34,
+  SARL:  0.34,
+  SAS:   0.34,
+  SASU:  0.34,
+  SA:    0.34,
+  OTHER: 0.34,
+};
 
 // ─── Built-in color maps ──────────────────────────────────────────────────────
 
@@ -305,7 +334,8 @@ export class DashboardService {
   // ─── URSSAF ────────────────────────────────────────────────────────────────
 
   async getUrssaf(businessId: string) {
-    const URSSAF_RATE = 0.212;
+    const business = await this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true } });
+    const URSSAF_RATE = URSSAF_RATES[business?.type ?? 'AUTO_ENTREPRENEUR'];
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth(); // 0-indexed
@@ -392,6 +422,8 @@ export class DashboardService {
       declarationDeadline: deadline.toISOString().slice(0, 10),
       daysUntilDeadline,
       previousQuarters,
+      urssafRate: URSSAF_RATE,
+      businessType: business?.type ?? 'AUTO_ENTREPRENEUR',
     };
   }
 
@@ -468,7 +500,8 @@ export class DashboardService {
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
-    const [invoices, revenues] = await Promise.all([
+    const [business, invoices, revenues] = await Promise.all([
+      this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true } }),
       this.prisma.invoice.aggregate({
         where: { businessId, status: 'PAID', paidAt: { gte: yearStart } },
         _sum: { total: true },
@@ -479,11 +512,12 @@ export class DashboardService {
       }),
     ]);
 
+    const businessType = business?.type ?? 'AUTO_ENTREPRENEUR';
     const yearRevenue = (invoices._sum.total ?? 0) + (revenues._sum.amount ?? 0);
-    const abatement = 0.34; // BNC default
+    const abatement = ABATEMENT_RATES[businessType];
     const taxableIncome = yearRevenue * (1 - abatement);
     const irEstimate = Math.round(taxableIncome * 0.22 * 100) / 100;
-    const urssafRate = 0.212;
+    const urssafRate = URSSAF_RATES[businessType];
     const urssafDeductible = Math.round(yearRevenue * urssafRate * 100) / 100;
     const netAfterTax = Math.round((yearRevenue - irEstimate - urssafDeductible) * 100) / 100;
 
@@ -495,6 +529,8 @@ export class DashboardService {
       irEstimate,
       urssafDeductible,
       netAfterTax,
+      urssafRate: urssafRate * 100,
+      businessType,
       disclaimer: 'Estimation indicative. Consultez un expert-comptable pour votre situation personnelle.',
     };
   }

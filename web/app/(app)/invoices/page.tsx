@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Invoice, InvoiceStatus, RecurrenceInterval } from '@/lib/types';
 import { apiGetInvoices, apiDeleteInvoice, getPdfUrl } from '@/lib/invoices';
-import { authFetch } from '@/lib/auth';
+import { authFetch, getActivePlan } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
 import { eur } from '@/lib/format';
 import { STATUS_LABEL, STATUS_COLOR } from '@/lib/format';
+import UpgradeModal from '@/components/UpgradeModal';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
 
@@ -44,12 +47,16 @@ function token() {
 
 export default function InvoicesPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const plan = getActivePlan(user);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InvoiceStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [usage, setUsage] = useState<PlanUsage | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     const t = token();
@@ -61,6 +68,13 @@ export default function InvoicesPage() {
       .then(setInvoices)
       .finally(() => setLoading(false));
   }, [tab, router]);
+
+  useEffect(() => {
+    if (plan !== 'FREE') return;
+    const t = token();
+    if (!t) return;
+    apiGetUsage(t).then(setUsage).catch(() => {});
+  }, [plan]);
 
   const filtered = search
     ? invoices.filter(
@@ -116,24 +130,52 @@ export default function InvoicesPage() {
       });
   }
 
+  const atInvoiceLimit = plan === 'FREE' && usage?.limits && usage.usage.invoicesThisMonth >= usage.limits.invoicesPerMonth;
+
   return (
     <div className="p-6 space-y-4">
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Limite de factures atteinte"
+        description={`Vous avez créé ${usage?.usage.invoicesThisMonth ?? 5}/5 factures ce mois-ci. Passez au plan Pro pour des factures illimitées.`}
+      />
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[16px] font-medium" style={{ color: '#1a1a18' }}>Factures</h1>
-          <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>{invoices.length} facture{invoices.length !== 1 ? 's' : ''}</p>
+          <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>
+            {invoices.length} facture{invoices.length !== 1 ? 's' : ''}
+            {plan === 'FREE' && usage?.limits && (
+              <span
+                className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{ background: atInvoiceLimit ? '#FEE2E2' : '#F5F5F3', color: atInvoiceLimit ? '#DC2626' : '#888780' }}
+              >
+                {usage.usage.invoicesThisMonth}/{usage.limits.invoicesPerMonth} ce mois
+              </span>
+            )}
+          </p>
         </div>
-        <Link
-          href="/invoices/new"
-          className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-80"
-          style={{ background: '#378ADD', color: '#E6F1FB' }}
-        >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nouvelle facture
-        </Link>
+        {atInvoiceLimit ? (
+          <button
+            onClick={() => setShowUpgrade(true)}
+            className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium"
+            style={{ background: '#185FA5', color: '#FFFFFF' }}
+          >
+            ✦ Passer au Pro
+          </button>
+        ) : (
+          <Link
+            href="/invoices/new"
+            className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-80"
+            style={{ background: '#378ADD', color: '#E6F1FB' }}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nouvelle facture
+          </Link>
+        )}
       </div>
 
       {/* Tabs */}

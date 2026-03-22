@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TimeEntry, Client } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { getActivePlan } from '@/lib/auth';
+import ProGate from '@/components/ProGate';
 import {
   apiGetTimeEntries,
   apiGetTimeStats,
@@ -152,6 +155,8 @@ function TimeEntryForm({ initial, onSave, onClose, clients }: TimeEntryFormProps
 
 export default function TimeTrackingPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const plan = getActivePlan(user);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [stats, setStats] = useState<{ totalHours: number; totalAmount: number; unbilledHours: number; unbilledAmount: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,6 +286,11 @@ export default function TimeTrackingPage() {
   const monthLabel = new Date(range.from).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   return (
+    <ProGate
+      isLocked={plan === 'FREE'}
+      feature="Suivi du temps"
+      description="Enregistrez vos heures, suivez votre facturation par client et générez des factures depuis vos entrées de temps."
+    >
     <div className="p-6 space-y-4">
       {/* Toast */}
       {toast && (
@@ -527,5 +537,6 @@ export default function TimeTrackingPage() {
         )}
       </div>
     </div>
+    </ProGate>
   );
 }

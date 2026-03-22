@@ -105,7 +105,8 @@ export function UrssafWidget() {
 
       {/* Rate note */}
       <p className="text-[10px] italic" style={{ color: '#888780' }}>
-        Taux applicable : 21,2 % (prestations de services)
+        Taux applicable : {data.urssafRate != null ? (data.urssafRate * 100).toLocaleString('fr-FR') : '21,2'} %
+        {data.businessType ? ` (${data.businessType.toLowerCase().replace('_', ' ')})` : ' (prestations de services)'}
       </p>
     </div>
   );

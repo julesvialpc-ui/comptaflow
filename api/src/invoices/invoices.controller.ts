@@ -16,10 +16,14 @@ import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { PlanLimitsService } from '../plan-limits/plan-limits.service';
 
 @Controller('invoices')
 export class InvoicesController {
-  constructor(private readonly invoicesService: InvoicesService) {}
+  constructor(
+    private readonly invoicesService: InvoicesService,
+    private readonly planLimits: PlanLimitsService,
+  ) {}
 
   // ── Next available number ──────────────────────────────────────────────────
   // Must be declared before :id to avoid route conflict
@@ -80,8 +84,9 @@ export class InvoicesController {
 
   // ── Create ────────────────────────────────────────────────────────────────
   @Post()
-  create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthUser) {
+  async create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.checkInvoiceLimit(user.id, user.businessId);
     return this.invoicesService.create(dto, user.businessId);
   }
 

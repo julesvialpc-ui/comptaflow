@@ -14,10 +14,14 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { PlanLimitsService } from '../plan-limits/plan-limits.service';
 
 @Controller('clients')
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(
+    private readonly clientsService: ClientsService,
+    private readonly planLimits: PlanLimitsService,
+  ) {}
 
   @Get()
   findAll(
@@ -41,8 +45,9 @@ export class ClientsController {
   }
 
   @Post()
-  create(@Body() dto: CreateClientDto, @CurrentUser() user: AuthUser) {
+  async create(@Body() dto: CreateClientDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.checkClientLimit(user.id, user.businessId);
     return this.clientsService.create(dto, user.businessId);
   }
 

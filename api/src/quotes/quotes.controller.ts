@@ -15,10 +15,14 @@ import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { PlanLimitsService } from '../plan-limits/plan-limits.service';
 
 @Controller('quotes')
 export class QuotesController {
-  constructor(private readonly quotesService: QuotesService) {}
+  constructor(
+    private readonly quotesService: QuotesService,
+    private readonly planLimits: PlanLimitsService,
+  ) {}
 
   @Get('next-number')
   nextNumber(@CurrentUser() user: AuthUser) {
@@ -44,8 +48,9 @@ export class QuotesController {
   }
 
   @Post()
-  create(@Body() dto: CreateQuoteDto, @CurrentUser() user: AuthUser) {
+  async create(@Body() dto: CreateQuoteDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.checkQuoteLimit(user.id, user.businessId);
     return this.quotesService.create(dto, user.businessId);
   }
 

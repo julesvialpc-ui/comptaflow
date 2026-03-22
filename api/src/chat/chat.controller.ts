@@ -5,12 +5,14 @@ import { CreateChatMessageDto } from './dto/create-chat-message.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { PlanLimitsService } from '../plan-limits/plan-limits.service';
 
 @Controller('chat')
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly aiChatService: AiChatService,
+    private readonly planLimits: PlanLimitsService,
   ) {}
 
   // ─── History ──────────────────────────────────────────────────────────────
@@ -37,6 +39,7 @@ export class ChatController {
   @Post('ai')
   async sendToAi(@Body() dto: SendMessageDto, @CurrentUser() user: AuthUser) {
     if (!dto.message?.trim()) throw new ForbiddenException('Message vide');
+    await this.planLimits.checkAiMessageLimit(user.id);
     const text = await this.aiChatService.sendMessage(user.id, user.businessId, dto.message);
     return { response: text };
   }
@@ -51,6 +54,12 @@ export class ChatController {
   ) {
     if (!dto.message?.trim()) {
       res.status(400).json({ message: 'Message vide' });
+      return;
+    }
+    try {
+      await this.planLimits.checkAiMessageLimit(user.id);
+    } catch (e: any) {
+      res.status(403).json(e.response);
       return;
     }
     await this.aiChatService.streamMessage(user.id, user.businessId, dto.message, res);

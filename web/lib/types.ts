@@ -374,6 +374,8 @@ export interface UrssafData {
   declarationDeadline: string;
   daysUntilDeadline: number;
   previousQuarters: UrssafQuarter[];
+  urssafRate?: number;
+  businessType?: string;
 }
 
 export interface DashboardData {

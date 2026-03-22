@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, KeyboardEvent } from 'react';
-import { getAccessToken } from '@/lib/auth';
+import { getAccessToken, getActivePlan } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
+import UpgradeModal from '@/components/UpgradeModal';
+import { PlanLimitError } from '@/lib/chat';
 import { apiGetHistory, apiClearHistory, apiStreamMessage, ChatMessage } from '@/lib/chat';
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
@@ -177,6 +181,10 @@ function ToolIndicator({ tools }: { tools: string[] }) {
 type UIMessage = ChatMessage & { streaming?: boolean; toolCalls?: string[] };
 
 export default function ChatPage() {
+  const { user } = useAuth();
+  const plan = getActivePlan(user);
+  const [usage, setUsage] = useState<PlanUsage | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -207,6 +215,14 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Fetch usage for FREE users
+  useEffect(() => {
+    if (plan !== 'FREE') return;
+    const token = getAccessToken();
+    if (!token) return;
+    apiGetUsage(token).then(setUsage).catch(() => {});
+  }, [plan]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -266,8 +282,13 @@ export default function ChatPage() {
         }
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de connexion');
-      setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+      if (err instanceof PlanLimitError) {
+        setShowUpgrade(true);
+        setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+      } else {
+        setError(err instanceof Error ? err.message : 'Erreur de connexion');
+        setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+      }
     } finally {
       setLoading(false);
       setActiveTools([]);
@@ -292,6 +313,13 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0 && !initialLoading;
 
   return (
+    <>
+    <UpgradeModal
+      isOpen={showUpgrade}
+      onClose={() => setShowUpgrade(false)}
+      title="Limite de messages IA atteinte"
+      description="Vous avez utilisé vos 10 messages IA ce mois. Passez au plan Pro pour un accès illimité."
+    />
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-zinc-50">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-zinc-200 shadow-sm">
@@ -309,6 +337,19 @@ export default function ChatPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             En ligne
           </span>
+          {plan === 'FREE' && usage && (
+            <span
+              className="text-xs rounded-full px-2.5 py-1 border cursor-pointer"
+              style={
+                (usage.usage.aiMessagesThisMonth ?? 0) >= 10
+                  ? { background: '#FEF2F2', borderColor: '#FECACA', color: '#DC2626' }
+                  : { background: '#F5F5F3', borderColor: '#E5E5E3', color: '#6B6868' }
+              }
+              onClick={() => setShowUpgrade(true)}
+            >
+              {usage.usage.aiMessagesThisMonth ?? 0}/10 messages ce mois
+            </span>
+          )}
           {messages.length > 0 && (
             <button
               onClick={() => setShowClearConfirm(true)}
@@ -442,5 +483,6 @@ export default function ChatPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }

@@ -104,6 +104,7 @@ export class AuthService {
     return this.prisma.user.findUnique({
       where: { id: userId },
       include: { business: true, subscription: true },
+      omit: { password: true, refreshToken: true },
     });
   }
 

@@ -6,7 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AppNotification } from '@/lib/types';
+import { getActivePlan } from '@/lib/auth';
 import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '@/lib/notifications';
+import UpgradeModal from '@/components/UpgradeModal';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -67,6 +69,7 @@ const NAV_MAIN = [
   {
     href: '/time-tracking',
     label: 'Temps',
+    pro: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.2" />
@@ -156,6 +159,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { theme, toggle: toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const plan = getActivePlan(user);
 
   useEffect(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -193,6 +198,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </p>
         {NAV_MAIN.map((item) => {
           const active = isActive(item.href, pathname);
+          const isProLocked = (item as any).pro && plan === 'FREE';
           return (
             <Link
               key={item.href}
@@ -208,6 +214,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             >
               <span>{item.icon}</span>
               {item.label}
+              {isProLocked && (
+                <span
+                  className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                  style={{ background: '#E6F1FB', color: '#185FA5' }}
+                >
+                  PRO
+                </span>
+              )}
             </Link>
           );
         })}
@@ -232,12 +246,21 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               {NAV_AI.icon}
             </span>
             {NAV_AI.label}
-            <span
-              className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-              style={{ background: '#E6F1FB', color: '#185FA5' }}
-            >
-              IA
-            </span>
+            {plan === 'FREE' ? (
+              <span
+                className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                style={{ background: '#E6F1FB', color: '#185FA5' }}
+              >
+                PRO
+              </span>
+            ) : (
+              <span
+                className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                style={{ background: '#E6F1FB', color: '#185FA5' }}
+              >
+                IA
+              </span>
+            )}
           </Link>
         </div>
       </nav>
@@ -258,6 +281,41 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           <span>{NAV_SETTINGS.icon}</span>
           {NAV_SETTINGS.label}
         </Link>
+
+        {/* Plan badge */}
+        {plan === 'FREE' && (
+          <div
+            className="mx-1 mb-2 rounded-lg px-3 py-2.5"
+            style={{ background: '#F0F7FF', border: '0.5px solid #C8DCF2' }}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-medium" style={{ color: '#6B6868' }}>Plan actuel</span>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{ background: '#E5E4E0', color: '#6B6868' }}
+              >
+                GRATUIT
+              </span>
+            </div>
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="w-full rounded-lg py-1.5 text-[12px] font-semibold text-white transition-opacity"
+              style={{ background: '#185FA5' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#14508a'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#185FA5'; }}
+            >
+              Passer au Pro ✦
+            </button>
+          </div>
+        )}
+        {plan !== 'FREE' && (
+          <div className="mx-1 mb-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: '#F0F7FF' }}>
+            <span className="text-[12px] font-medium" style={{ color: '#185FA5' }}>Plan {plan}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#185FA5">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </div>
+        )}
 
         {/* Notification bell + Dark mode toggle */}
         <div className="flex items-center gap-1 px-3 py-1.5 mb-1">
@@ -353,6 +411,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             )}
           </button>
         </div>
+
+        <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
         <div className="flex items-center gap-2.5 px-3 py-2">
           <div

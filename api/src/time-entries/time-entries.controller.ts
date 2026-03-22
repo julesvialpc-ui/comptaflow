@@ -14,19 +14,24 @@ import { CreateTimeEntryDto } from './dto/create-time-entry.dto';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthUser } from '../common/types/auth-user.type';
+import { PlanLimitsService } from '../plan-limits/plan-limits.service';
 
 @Controller('time-entries')
 export class TimeEntriesController {
-  constructor(private readonly service: TimeEntriesService) {}
+  constructor(
+    private readonly service: TimeEntriesService,
+    private readonly planLimits: PlanLimitsService,
+  ) {}
 
   @Get('stats')
-  getStats(@CurrentUser() user: AuthUser) {
+  async getStats(@CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.getStats(user.businessId);
   }
 
   @Get()
-  findAll(
+  async findAll(
     @CurrentUser() user: AuthUser,
     @Query('clientId') clientId?: string,
     @Query('startDate') startDate?: string,
@@ -34,6 +39,7 @@ export class TimeEntriesController {
     @Query('isBilled') isBilled?: string,
   ) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.findAll(user.businessId, {
       clientId,
       startDate: startDate ? new Date(startDate) : undefined,
@@ -49,33 +55,37 @@ export class TimeEntriesController {
   }
 
   @Post('generate-invoice')
-  generateInvoice(
+  async generateInvoice(
     @Body() body: { clientId: string; timeEntryIds: string[] },
     @CurrentUser() user: AuthUser,
   ) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.generateInvoice(user.businessId, body);
   }
 
   @Post()
-  create(@Body() dto: CreateTimeEntryDto, @CurrentUser() user: AuthUser) {
+  async create(@Body() dto: CreateTimeEntryDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.create(dto, user.businessId);
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() dto: UpdateTimeEntryDto,
     @CurrentUser() user: AuthUser,
   ) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.update(id, user.businessId, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');
+    await this.planLimits.assertMinPlan(user.id, 'PRO');
     return this.service.remove(id, user.businessId);
   }
 }

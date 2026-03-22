@@ -34,6 +34,13 @@ export type StreamEvent =
   | { type: 'tool_calls'; tools: string[] }
   | { type: 'done' };
 
+export class PlanLimitError extends Error {
+  constructor(public readonly data: { code: string; resource: string; limit: number; current: number; message: string }) {
+    super(data.message);
+    this.name = 'PlanLimitError';
+  }
+}
+
 export async function apiStreamMessage(
   token: string,
   message: string,
@@ -45,7 +52,13 @@ export async function apiStreamMessage(
     body: JSON.stringify({ message }),
   });
 
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    if (res.status === 403 && body?.code === 'PLAN_LIMIT_REACHED') {
+      throw new PlanLimitError(body);
+    }
+    throw new Error(body?.message ?? 'Erreur de connexion');
+  }
 
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();

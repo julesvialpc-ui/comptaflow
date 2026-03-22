@@ -20,6 +20,7 @@ import { UserCategoriesModule } from './user-categories/user-categories.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { CategoryBudgetsModule } from './category-budgets/category-budgets.module';
 import { TimeEntriesModule } from './time-entries/time-entries.module';
+import { PlanLimitsModule } from './plan-limits/plan-limits.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -42,6 +43,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     QuotesModule,
     CategoryBudgetsModule,
     TimeEntriesModule,
+    PlanLimitsModule,
   ],
   controllers: [AppController],
   providers: [
