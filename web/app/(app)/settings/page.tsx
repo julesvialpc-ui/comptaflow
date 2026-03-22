@@ -467,10 +467,20 @@ function SubscriptionTab({ token }: { token: string }) {
   const [portalLoading, setPortalLoading] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
-  useEffect(() => {
+  const fetchSub = () => {
+    setLoading(true);
     apiGetProfile(token).then((p) => {
       setSub(p.subscription ?? null);
     }).catch(() => {}).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchSub();
+    // Refresh when user comes back to the tab (e.g. after Stripe redirect)
+    const onFocus = () => fetchSub();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function handleCheckout(plan: 'PRO' | 'BUSINESS') {

@@ -100,6 +100,13 @@ export class AuthService {
 
   // ─── Update profile ───────────────────────────────────────────────────────
 
+  async getProfile(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { business: true, subscription: true },
+    });
+  }
+
   async updateProfile(userId: string, dto: { name?: string }) {
     return this.prisma.user.update({
       where: { id: userId },

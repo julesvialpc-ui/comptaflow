@@ -4,10 +4,12 @@ import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from './stripe.service';
 
-const PRICE_IDS: Record<'PRO' | 'BUSINESS', string> = {
-  PRO: process.env.STRIPE_PRICE_PRO ?? '',
-  BUSINESS: process.env.STRIPE_PRICE_BUSINESS ?? '',
-};
+function getPriceIds(): Record<'PRO' | 'BUSINESS', string> {
+  return {
+    PRO: process.env.STRIPE_PRICE_PRO ?? '',
+    BUSINESS: process.env.STRIPE_PRICE_BUSINESS ?? '',
+  };
+}
 
 @Injectable()
 export class SubscriptionsService {
@@ -29,7 +31,7 @@ export class SubscriptionsService {
   }
 
   async createCheckoutSession(userId: string, plan: 'PRO' | 'BUSINESS') {
-    const priceId = PRICE_IDS[plan];
+    const priceId = getPriceIds()[plan];
     if (!priceId || priceId.startsWith('price_REPLACE')) {
       throw new BadRequestException('Stripe price not configured');
     }
@@ -105,7 +107,8 @@ export class SubscriptionsService {
     const stripeSub = await this.stripe.subscriptions.retrieve(stripeSubId);
     const priceId = stripeSub.items.data[0]?.price.id;
     const plan = this.planFromPriceId(priceId);
-    await this.prisma.subscription.updateMany({
+    console.log('[Webhook] checkout.session.completed', { customerId, stripeSubId, priceId, plan });
+    const result = await this.prisma.subscription.updateMany({
       where: { stripeCustomerId: customerId },
       data: {
         plan, status: 'ACTIVE',
@@ -115,6 +118,7 @@ export class SubscriptionsService {
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
       },
     });
+    console.log('[Webhook] updateMany result:', result);
   }
 
   private async handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -167,8 +171,9 @@ export class SubscriptionsService {
   }
 
   private planFromPriceId(priceId?: string): SubscriptionPlan {
-    if (priceId === PRICE_IDS.BUSINESS) return 'BUSINESS';
-    if (priceId === PRICE_IDS.PRO) return 'PRO';
+    const ids = getPriceIds();
+    if (priceId === ids.BUSINESS) return 'BUSINESS';
+    if (priceId === ids.PRO) return 'PRO';
     return 'FREE';
   }
 }
