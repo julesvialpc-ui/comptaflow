@@ -202,9 +202,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-14 items-center px-4 border-b border-[#E5E4E0]">
-        <span className="text-[20px] font-medium tracking-tight">
+        <Link href="/dashboard" onClick={onNavClick} className="text-[20px] font-medium tracking-tight">
           <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
-        </span>
+        </Link>
       </div>
 
       {/* Main nav */}
