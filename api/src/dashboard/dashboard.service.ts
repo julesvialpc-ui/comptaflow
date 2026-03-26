@@ -5,23 +5,38 @@ import { PrismaService } from '../prisma/prisma.service';
 // ─── Taux par statut juridique (2026) ────────────────────────────────────────
 
 // Sources : urssaf.fr, autoentrepreneur.urssaf.fr — taux en vigueur au 01/01/2026
-// Pour auto-entrepreneur/EI/EIRL : taux appliqués sur le CA (régime micro)
-//   - Vente de marchandises (BIC) : 12,3 %
-//   - Prestations de services (BIC) : 21,2 % ← taux utilisé par défaut
-//   - Activités libérales (BNC) : 25,6 % (hausse +1 pt vs 2025)
-//   - Libéraux CIPAV : 23,2 %
+// Pour auto-entrepreneur/EI/EIRL : taux sur CA selon ActivityType (régime micro)
 // Pour EURL/SARL (TNS) et SAS/SASU (assimilé salarié) : estimation sur CA
-const URSSAF_RATES: Record<BusinessType, number> = {
-  AUTO_ENTREPRENEUR: 0.212,  // services BIC (taux 2026 inchangé)
-  EI:    0.212,              // micro-BIC services (2026 inchangé)
-  EIRL:  0.212,              // statut supprimé, conservé par compatibilité
-  EURL:  0.45,               // gérant TNS majoritaire ~40-45 % rémunération (2026 inchangé)
-  SARL:  0.45,               // gérant TNS majoritaire (idem EURL)
-  SAS:   0.45,               // assimilé salarié ~45 % brut rémunération (2026)
-  SASU:  0.45,               // président assimilé salarié (idem SAS)
-  SA:    0.45,               // dirigeant assimilé salarié
+import { ActivityType } from '@prisma/client';
+
+const ACTIVITY_TYPE_RATES: Record<ActivityType, number> = {
+  BIC_VENTE:    0.123,  // Vente de marchandises — 12,3 %
+  BIC_SERVICES: 0.212,  // Prestations de services — 21,2 %
+  BNC:          0.256,  // Activités libérales hors CIPAV — 25,6 % (hausse 2026)
+  BNC_CIPAV:    0.232,  // Activités libérales CIPAV — 23,2 %
+};
+
+// Taux pour les statuts sociétaires (estimation sur CA)
+const COMPANY_URSSAF_RATES: Record<BusinessType, number> = {
+  AUTO_ENTREPRENEUR: 0.212,  // fallback si activityType absent
+  EI:    0.212,
+  EIRL:  0.212,
+  EURL:  0.45,   // gérant TNS majoritaire ~40-45 % rémunération
+  SARL:  0.45,   // gérant TNS majoritaire
+  SAS:   0.45,   // assimilé salarié ~45 % brut
+  SASU:  0.45,
+  SA:    0.45,
   OTHER: 0.212,
 };
+
+const MICRO_TYPES: BusinessType[] = ['AUTO_ENTREPRENEUR', 'EI', 'EIRL'];
+
+function getUrssafRate(type: BusinessType, activityType?: ActivityType | null): number {
+  if (MICRO_TYPES.includes(type) && activityType) {
+    return ACTIVITY_TYPE_RATES[activityType];
+  }
+  return COMPANY_URSSAF_RATES[type];
+}
 
 // Abattement forfaitaire IR (régime micro)
 const ABATEMENT_RATES: Record<BusinessType, number> = {
@@ -340,8 +355,8 @@ export class DashboardService {
   // ─── URSSAF ────────────────────────────────────────────────────────────────
 
   async getUrssaf(businessId: string) {
-    const business = await this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true } });
-    const URSSAF_RATE = URSSAF_RATES[business?.type ?? 'AUTO_ENTREPRENEUR'];
+    const business = await this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true, activityType: true } });
+    const URSSAF_RATE = getUrssafRate(business?.type ?? 'AUTO_ENTREPRENEUR', business?.activityType);
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth(); // 0-indexed
@@ -430,6 +445,7 @@ export class DashboardService {
       previousQuarters,
       urssafRate: URSSAF_RATE,
       businessType: business?.type ?? 'AUTO_ENTREPRENEUR',
+      activityType: business?.activityType ?? null,
     };
   }
 
@@ -507,7 +523,7 @@ export class DashboardService {
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
     const [business, invoices, revenues] = await Promise.all([
-      this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true } }),
+      this.prisma.business.findUnique({ where: { id: businessId }, select: { type: true, activityType: true } }),
       this.prisma.invoice.aggregate({
         where: { businessId, status: 'PAID', paidAt: { gte: yearStart } },
         _sum: { total: true },
@@ -523,7 +539,7 @@ export class DashboardService {
     const abatement = ABATEMENT_RATES[businessType];
     const taxableIncome = yearRevenue * (1 - abatement);
     const irEstimate = Math.round(taxableIncome * 0.22 * 100) / 100;
-    const urssafRate = URSSAF_RATES[businessType];
+    const urssafRate = getUrssafRate(businessType, business?.activityType);
     const urssafDeductible = Math.round(yearRevenue * urssafRate * 100) / 100;
     const netAfterTax = Math.round((yearRevenue - irEstimate - urssafDeductible) * 100) / 100;
 

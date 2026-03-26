@@ -284,6 +284,7 @@ export interface Business {
   siren: string | null;
   vatNumber: string | null;
   type: BusinessType;
+  activityType: 'BIC_VENTE' | 'BIC_SERVICES' | 'BNC' | 'BNC_CIPAV' | null;
   address: string | null;
   city: string | null;
   postalCode: string | null;
@@ -376,6 +377,7 @@ export interface UrssafData {
   previousQuarters: UrssafQuarter[];
   urssafRate?: number;
   businessType?: string;
+  activityType?: string | null;
 }
 
 export interface DashboardData {

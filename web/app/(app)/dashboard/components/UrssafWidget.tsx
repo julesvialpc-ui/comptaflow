@@ -7,15 +7,19 @@ import { eur } from '@/lib/format';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  AUTO_ENTREPRENEUR: 'auto-entrepreneur · services BIC',
-  EI: 'entreprise individuelle',
-  EIRL: 'EIRL',
   EURL: 'EURL · gérant TNS',
   SARL: 'SARL · gérant TNS',
   SAS: 'SAS · assimilé salarié',
   SASU: 'SASU · assimilé salarié',
   SA: 'SA · assimilé salarié',
   OTHER: 'autre statut',
+};
+
+const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+  BIC_VENTE:    'vente de marchandises · BIC',
+  BIC_SERVICES: 'prestations de services · BIC',
+  BNC:          'activités libérales · BNC',
+  BNC_CIPAV:    'activités libérales · BNC CIPAV',
 };
 
 export function UrssafWidget() {
@@ -117,9 +121,14 @@ export function UrssafWidget() {
 
       {/* Rate note */}
       <p className="text-[10px] italic" style={{ color: '#888780' }}>
-        Taux applicable : {data.urssafRate != null ? (data.urssafRate * 100).toLocaleString('fr-FR') : '21,2'} %
-        {data.businessType ? ` (${BUSINESS_TYPE_LABELS[data.businessType] ?? data.businessType.toLowerCase()})` : ' (prestations de services)'}
-        {' · '}taux 2026
+        {(() => {
+          const rate = data.urssafRate != null ? (data.urssafRate * 100).toLocaleString('fr-FR') : '21,2';
+          const isMicro = ['AUTO_ENTREPRENEUR', 'EI', 'EIRL'].includes(data.businessType ?? '');
+          const typeLabel = isMicro
+            ? (data.activityType ? ACTIVITY_TYPE_LABELS[data.activityType] : 'prestations de services · BIC')
+            : (BUSINESS_TYPE_LABELS[data.businessType ?? ''] ?? data.businessType?.toLowerCase() ?? '');
+          return `Taux applicable : ${rate} % (${typeLabel}) · taux 2026`;
+        })()}
       </p>
     </div>
   );

@@ -52,6 +52,7 @@ export interface BusinessPayload {
   siren?: string;
   vatNumber?: string;
   type?: BusinessType;
+  activityType?: 'BIC_VENTE' | 'BIC_SERVICES' | 'BNC' | 'BNC_CIPAV' | null;
   address?: string;
   city?: string;
   postalCode?: string;

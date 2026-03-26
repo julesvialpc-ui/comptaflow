@@ -25,6 +25,13 @@ enum BusinessType {
   OTHER
 }
 
+enum ActivityType {
+  BIC_VENTE      // Vente de marchandises — 12,3 %
+  BIC_SERVICES   // Prestations de services — 21,2 %
+  BNC            // Activités libérales hors CIPAV — 25,6 %
+  BNC_CIPAV      // Activités libérales CIPAV — 23,2 %
+}
+
 enum InvoiceStatus {
   DRAFT
   SENT
@@ -153,6 +160,7 @@ model Business {
   siren       String?      @unique
   vatNumber   String?
   type        BusinessType @default(AUTO_ENTREPRENEUR)
+  activityType ActivityType @default(BIC_SERVICES)
   address     String?
   city        String?
   postalCode  String?

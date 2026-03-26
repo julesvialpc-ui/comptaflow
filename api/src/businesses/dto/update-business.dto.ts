@@ -1,4 +1,4 @@
-import { BusinessType } from '@prisma/client';
+import { BusinessType, ActivityType } from '@prisma/client';
 
 export class UpdateBusinessDto {
   name?: string;
@@ -6,6 +6,7 @@ export class UpdateBusinessDto {
   siren?: string;
   vatNumber?: string;
   type?: BusinessType;
+  activityType?: ActivityType;
   address?: string;
   city?: string;
   postalCode?: string;

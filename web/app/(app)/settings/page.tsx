@@ -39,6 +39,17 @@ const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'OTHER', label: 'Autre' },
 ];
 
+type ActivityType = 'BIC_VENTE' | 'BIC_SERVICES' | 'BNC' | 'BNC_CIPAV';
+
+const ACTIVITY_TYPES: { value: ActivityType; label: string; rate: string }[] = [
+  { value: 'BIC_SERVICES', label: 'Prestations de services (BIC)',     rate: '21,2 %' },
+  { value: 'BIC_VENTE',    label: 'Vente de marchandises (BIC)',       rate: '12,3 %' },
+  { value: 'BNC',          label: 'Activités libérales hors CIPAV (BNC)', rate: '25,6 %' },
+  { value: 'BNC_CIPAV',    label: 'Activités libérales CIPAV (BNC)',   rate: '23,2 %' },
+];
+
+const MICRO_TYPES: BusinessType[] = ['AUTO_ENTREPRENEUR', 'EI', 'EIRL'];
+
 const PLAN_META: Record<string, { label: string; price: string; color: string; features: string[] }> = {
   FREE: {
     label: 'Gratuit',
@@ -267,6 +278,7 @@ function BusinessTab({ token }: { token: string }) {
         setForm({
           name: b.name,
           type: b.type,
+          activityType: b.activityType ?? 'BIC_SERVICES',
           siret: b.siret ?? '',
           siren: b.siren ?? '',
           vatNumber: b.vatNumber ?? '',
@@ -334,6 +346,18 @@ function BusinessTab({ token }: { token: string }) {
               ))}
             </Select>
           </Field>
+          {MICRO_TYPES.includes((form.type ?? 'AUTO_ENTREPRENEUR') as BusinessType) && (
+            <Field label="Nature de l'activité (URSSAF)">
+              <Select
+                value={form.activityType ?? 'BIC_SERVICES'}
+                onChange={(e) => setForm((p) => ({ ...p, activityType: e.target.value as ActivityType }))}
+              >
+                {ACTIVITY_TYPES.map((a) => (
+                  <option key={a.value} value={a.value}>{a.label} — {a.rate}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Objectif CA annuel (€)">
             <Input
               type="number"
