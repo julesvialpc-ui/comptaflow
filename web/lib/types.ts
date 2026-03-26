@@ -158,6 +158,8 @@ export interface IrEstimate {
   irEstimate: number;
   urssafDeductible: number;
   netAfterTax: number;
+  urssafRate: number;
+  businessType?: string;
   disclaimer: string;
 }
 

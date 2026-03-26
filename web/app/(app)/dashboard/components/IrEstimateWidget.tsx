@@ -45,11 +45,11 @@ export function IrEstimateWidget() {
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-md p-2.5" style={{ background: '#FEF2F2' }}>
-              <p className="text-[10px]" style={{ color: '#888780' }}>IR estimé (22%)</p>
+              <p className="text-[10px]" style={{ color: '#888780' }}>IR estimé (22 %)</p>
               <p className="text-[14px] font-medium" style={{ color: '#DC2626' }}>{eur(data.irEstimate)}</p>
             </div>
             <div className="rounded-md p-2.5" style={{ background: '#FEF2F2' }}>
-              <p className="text-[10px]" style={{ color: '#888780' }}>URSSAF (21.2%)</p>
+              <p className="text-[10px]" style={{ color: '#888780' }}>URSSAF ({data.urssafRate != null ? data.urssafRate.toLocaleString('fr-FR') : '21,2'} %)</p>
               <p className="text-[14px] font-medium" style={{ color: '#DC2626' }}>{eur(data.urssafDeductible)}</p>
             </div>
             <div className="rounded-md p-2.5" style={{ background: '#F0F9EC' }}>
