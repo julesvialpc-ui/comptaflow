@@ -129,6 +129,15 @@ enum SubscriptionStatus {
   INACTIVE
 }
 
+enum ContractType {
+  CDI
+  CDD
+  FREELANCE
+  ALTERNANCE
+  STAGE
+  OTHER
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -173,6 +182,7 @@ model Business {
   revenueGoal    Float?
   isVatSubject   Boolean @default(false)
   defaultVatRate Float   @default(0.20)
+  hasEmployees   Boolean @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -187,6 +197,7 @@ model Business {
   quotes           Quote[]
   categoryBudgets  CategoryBudget[]
   timeEntries      TimeEntry[]
+  employees        Employee[]
 
   @@map("businesses")
 }
@@ -466,6 +477,33 @@ model ChatMessage {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
+}
+
+model Employee {
+  id                   String       @id @default(uuid())
+  businessId           String
+  firstName            String
+  lastName             String
+  email                String?
+  phone                String?
+  address              String?
+  city                 String?
+  postalCode           String?
+  position             String?
+  contractType         ContractType @default(CDI)
+  grossSalary          Float
+  startDate            DateTime
+  endDate              DateTime?
+  socialSecurityNumber String?
+  iban                 String?
+  isActive             Boolean      @default(true)
+  notes                String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("employees")
 }
 
 model Subscription {

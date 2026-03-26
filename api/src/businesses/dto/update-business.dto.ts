@@ -19,4 +19,5 @@ export class UpdateBusinessDto {
   revenueGoal?: number;
   isVatSubject?: boolean;
   defaultVatRate?: number;
+  hasEmployees?: boolean;
 }

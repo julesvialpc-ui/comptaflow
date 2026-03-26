@@ -274,6 +274,38 @@ export interface TaxPreview {
 
 // ─── Business & User types ────────────────────────────────────────────────────
 
+export type ContractType = 'CDI' | 'CDD' | 'FREELANCE' | 'ALTERNANCE' | 'STAGE' | 'OTHER';
+
+export interface Employee {
+  id: string;
+  businessId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  postalCode: string | null;
+  position: string | null;
+  contractType: ContractType;
+  grossSalary: number;
+  startDate: string;
+  endDate: string | null;
+  socialSecurityNumber: string | null;
+  iban: string | null;
+  isActive: boolean;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeStats {
+  total: number;
+  active: number;
+  inactive: number;
+  totalGrossSalary: number;
+}
+
 export type BusinessType =
   | 'AUTO_ENTREPRENEUR' | 'EI' | 'EIRL' | 'EURL'
   | 'SARL' | 'SAS' | 'SASU' | 'SA' | 'OTHER';
@@ -287,6 +319,7 @@ export interface Business {
   vatNumber: string | null;
   type: BusinessType;
   activityType: 'BIC_VENTE' | 'BIC_SERVICES' | 'BNC' | 'BNC_CIPAV' | null;
+  hasEmployees: boolean;
   address: string | null;
   city: string | null;
   postalCode: string | null;

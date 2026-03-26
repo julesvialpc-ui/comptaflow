@@ -267,6 +267,7 @@ function ProfileTab({ token }: { token: string }) {
 function BusinessTab({ token }: { token: string }) {
   const [form, setForm] = useState<BusinessPayload>({});
   const [isVatSubject, setIsVatSubject] = useState(false);
+  const [hasEmployees, setHasEmployees] = useState(false);
   const [defaultVatRate, setDefaultVatRate] = useState('0.20');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -293,6 +294,7 @@ function BusinessTab({ token }: { token: string }) {
           revenueGoal: b.revenueGoal ?? undefined,
         });
         setIsVatSubject(b.isVatSubject ?? false);
+        setHasEmployees(b.hasEmployees ?? false);
         setDefaultVatRate(String(b.defaultVatRate ?? 0.20));
       }
     }).catch(() => {}).finally(() => setLoading(false));
@@ -312,6 +314,7 @@ function BusinessTab({ token }: { token: string }) {
         ...form,
         revenueGoal: form.revenueGoal ? Number(form.revenueGoal) : null,
         isVatSubject,
+        hasEmployees,
         defaultVatRate: parseFloat(defaultVatRate),
       });
       setAlert({ type: 'success', msg: 'Informations entreprise enregistrées.' });
@@ -402,6 +405,24 @@ function BusinessTab({ token }: { token: string }) {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            {/* Employés */}
+            <div className="pt-4 border-t border-[#E5E4E0]">
+              <p className="text-[12px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888780' }}>Employés</p>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div
+                  onClick={() => setHasEmployees(!hasEmployees)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${hasEmployees ? 'bg-[#378ADD]' : 'bg-zinc-200'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${hasEmployees ? 'translate-x-4' : 'translate-x-1'}`} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>J'ai des employés</p>
+                  <p className="text-[11px]" style={{ color: '#888780' }}>Affiche l'onglet "Mes employés" dans la navigation</p>
+                </div>
+              </label>
             </div>
           </div>
           <Field label="SIRET" hint="14 chiffres">

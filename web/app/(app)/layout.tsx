@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { AppNotification } from '@/lib/types';
 import { getActivePlan } from '@/lib/auth';
 import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '@/lib/notifications';
+import { apiGetBusiness } from '@/lib/settings';
 import UpgradeModal from '@/components/UpgradeModal';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
@@ -98,6 +99,19 @@ const NAV_MAIN = [
   },
 ];
 
+const NAV_EMPLOYEES = {
+  href: '/employees',
+  label: 'Mes employés',
+  icon: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="5.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="10.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M1 13c0-2.21 2.015-4 4.5-4s4.5 1.79 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M11 9.2c1.5.4 2.7 1.8 2.7 3.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
 const NAV_SETTINGS = {
   href: '/settings',
   label: 'Paramètres',
@@ -160,12 +174,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [hasEmployees, setHasEmployees] = useState(false);
   const plan = getActivePlan(user);
 
   useEffect(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (!t) return;
     apiGetNotifications(t).then(setNotifications).catch(() => {});
+    apiGetBusiness(t).then((b) => { if (b?.hasEmployees) setHasEmployees(true); }).catch(() => {});
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -225,6 +241,24 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             </Link>
           );
         })}
+
+        {/* Employees — shown only if hasEmployees is enabled in settings */}
+        {hasEmployees && (
+          <Link
+            href={NAV_EMPLOYEES.href}
+            onClick={onNavClick}
+            className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
+            style={isActive(NAV_EMPLOYEES.href, pathname)
+              ? { background: '#E6F1FB', color: '#185FA5' }
+              : { color: '#6B6868' }
+            }
+            onMouseEnter={e => { if (!isActive(NAV_EMPLOYEES.href, pathname)) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+            onMouseLeave={e => { if (!isActive(NAV_EMPLOYEES.href, pathname)) (e.currentTarget as HTMLElement).style.background = ''; }}
+          >
+            <span>{NAV_EMPLOYEES.icon}</span>
+            {NAV_EMPLOYEES.label}
+          </Link>
+        )}
 
         {/* AI section */}
         <div className="pt-3 pb-1">
