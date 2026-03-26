@@ -2,18 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { BusinessType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-// ─── Taux par statut juridique (2024) ────────────────────────────────────────
+// ─── Taux par statut juridique (2026) ────────────────────────────────────────
 
-// Cotisations sociales sur CA (auto-entrepreneurs) ou estimation rémunération
+// Sources : urssaf.fr, autoentrepreneur.urssaf.fr — taux en vigueur au 01/01/2026
+// Pour auto-entrepreneur/EI/EIRL : taux appliqués sur le CA (régime micro)
+//   - Vente de marchandises (BIC) : 12,3 %
+//   - Prestations de services (BIC) : 21,2 % ← taux utilisé par défaut
+//   - Activités libérales (BNC) : 25,6 % (hausse +1 pt vs 2025)
+//   - Libéraux CIPAV : 23,2 %
+// Pour EURL/SARL (TNS) et SAS/SASU (assimilé salarié) : estimation sur CA
 const URSSAF_RATES: Record<BusinessType, number> = {
-  AUTO_ENTREPRENEUR: 0.212,  // BNC prestations libérales
-  EI:    0.212,              // micro-BNC
-  EIRL:  0.212,
-  EURL:  0.45,               // gérant TNS majoritaire (estimation)
-  SARL:  0.45,               // gérant TNS majoritaire
-  SAS:   0.25,               // assimilé salarié (estimation)
-  SASU:  0.25,
-  SA:    0.25,
+  AUTO_ENTREPRENEUR: 0.212,  // services BIC (taux 2026 inchangé)
+  EI:    0.212,              // micro-BIC services (2026 inchangé)
+  EIRL:  0.212,              // statut supprimé, conservé par compatibilité
+  EURL:  0.45,               // gérant TNS majoritaire ~40-45 % rémunération (2026 inchangé)
+  SARL:  0.45,               // gérant TNS majoritaire (idem EURL)
+  SAS:   0.45,               // assimilé salarié ~45 % brut rémunération (2026)
+  SASU:  0.45,               // président assimilé salarié (idem SAS)
+  SA:    0.45,               // dirigeant assimilé salarié
   OTHER: 0.212,
 };
 

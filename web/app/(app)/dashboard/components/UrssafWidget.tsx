@@ -6,6 +6,18 @@ import { eur } from '@/lib/format';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
+const BUSINESS_TYPE_LABELS: Record<string, string> = {
+  AUTO_ENTREPRENEUR: 'auto-entrepreneur · services BIC',
+  EI: 'entreprise individuelle',
+  EIRL: 'EIRL',
+  EURL: 'EURL · gérant TNS',
+  SARL: 'SARL · gérant TNS',
+  SAS: 'SAS · assimilé salarié',
+  SASU: 'SASU · assimilé salarié',
+  SA: 'SA · assimilé salarié',
+  OTHER: 'autre statut',
+};
+
 export function UrssafWidget() {
   const [data, setData] = useState<UrssafData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,7 +118,8 @@ export function UrssafWidget() {
       {/* Rate note */}
       <p className="text-[10px] italic" style={{ color: '#888780' }}>
         Taux applicable : {data.urssafRate != null ? (data.urssafRate * 100).toLocaleString('fr-FR') : '21,2'} %
-        {data.businessType ? ` (${data.businessType.toLowerCase().replace('_', ' ')})` : ' (prestations de services)'}
+        {data.businessType ? ` (${BUSINESS_TYPE_LABELS[data.businessType] ?? data.businessType.toLowerCase()})` : ' (prestations de services)'}
+        {' · '}taux 2026
       </p>
     </div>
   );
