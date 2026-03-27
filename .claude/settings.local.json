@@ -99,7 +99,8 @@
       "Bash(journalctl -u api)",
       "Bash(kill 90226)",
       "Bash(PGPASSWORD='' psql -U postgres -d comptaflow -c \"SELECT email FROM users LIMIT 1;\")",
-      "Bash(PGPASSWORD=secret123 psql -U comptaflow -d comptaflow -h localhost -c \"SELECT email FROM users LIMIT 3;\" 2>&1)"
+      "Bash(PGPASSWORD=secret123 psql -U comptaflow -d comptaflow -h localhost -c \"SELECT email FROM users LIMIT 3;\" 2>&1)",
+      "Bash(wc:*)"
     ]
   }
 }

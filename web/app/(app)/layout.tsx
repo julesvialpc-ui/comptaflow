@@ -13,19 +13,7 @@ import UpgradeModal from '@/components/UpgradeModal';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
-const NAV_MAIN = [
-  {
-    href: '/dashboard',
-    label: 'Dashboard',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
-        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
-        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
-        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
-      </svg>
-    ),
-  },
+const NAV_ACTIVITE = [
   {
     href: '/invoices',
     label: 'Factures',
@@ -57,6 +45,9 @@ const NAV_MAIN = [
       </svg>
     ),
   },
+];
+
+const NAV_FINANCE = [
   {
     href: '/revenues',
     label: 'Revenus',
@@ -64,6 +55,16 @@ const NAV_MAIN = [
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
         <rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    href: '/expenses',
+    label: 'Dépenses',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
       </svg>
     ),
   },
@@ -78,13 +79,18 @@ const NAV_MAIN = [
       </svg>
     ),
   },
+];
+
+const NAV_PILOTAGE = [
   {
-    href: '/expenses',
-    label: 'Dépenses',
+    href: '/dashboard',
+    label: 'Dashboard',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-        <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
+        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
+        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
+        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
+        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.7" />
       </svg>
     ),
   },
@@ -209,49 +215,65 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>
-          Navigation
-        </p>
-        {NAV_MAIN.map((item) => {
+
+        {/* Activité */}
+        <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>Activité</p>
+        {NAV_ACTIVITE.map((item) => {
+          const active = isActive(item.href, pathname);
+          return (
+            <Link key={item.href} href={item.href} onClick={onNavClick}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
+              style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
+
+        {/* Finance */}
+        <p className="px-3 pt-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>Finance</p>
+        {NAV_FINANCE.map((item) => {
           const active = isActive(item.href, pathname);
           const isProLocked = (item as any).pro && plan === 'FREE';
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavClick}
+            <Link key={item.href} href={item.href} onClick={onNavClick}
               className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
-              style={active
-                ? { background: '#E6F1FB', color: '#185FA5' }
-                : { color: '#6B6868' }
-              }
+              style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}
             >
               <span>{item.icon}</span>
               {item.label}
               {isProLocked && (
-                <span
-                  className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                  style={{ background: '#E6F1FB', color: '#185FA5' }}
-                >
-                  PRO
-                </span>
+                <span className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold" style={{ background: '#E6F1FB', color: '#185FA5' }}>PRO</span>
               )}
             </Link>
           );
         })}
 
-        {/* Employees — shown only if hasEmployees is enabled in settings */}
+        {/* Pilotage */}
+        <p className="px-3 pt-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>Pilotage</p>
+        {NAV_PILOTAGE.map((item) => {
+          const active = isActive(item.href, pathname);
+          return (
+            <Link key={item.href} href={item.href} onClick={onNavClick}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
+              style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
         {hasEmployees && (
-          <Link
-            href={NAV_EMPLOYEES.href}
-            onClick={onNavClick}
+          <Link href={NAV_EMPLOYEES.href} onClick={onNavClick}
             className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
-            style={isActive(NAV_EMPLOYEES.href, pathname)
-              ? { background: '#E6F1FB', color: '#185FA5' }
-              : { color: '#6B6868' }
-            }
+            style={isActive(NAV_EMPLOYEES.href, pathname) ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
             onMouseEnter={e => { if (!isActive(NAV_EMPLOYEES.href, pathname)) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
             onMouseLeave={e => { if (!isActive(NAV_EMPLOYEES.href, pathname)) (e.currentTarget as HTMLElement).style.background = ''; }}
           >
@@ -260,40 +282,23 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           </Link>
         )}
 
-        {/* AI section */}
-        <div className="pt-3 pb-1">
-          <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>
-            Intelligence artificielle
-          </p>
-          <Link
-            href={NAV_AI.href}
-            onClick={onNavClick}
+        {/* Assistant IA */}
+        <div className="pt-3">
+          <Link href={NAV_AI.href} onClick={onNavClick}
             className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
             style={isActive(NAV_AI.href, pathname)
               ? { background: '#E6F1FB', color: '#185FA5' }
-              : { color: '#6B6868' }
+              : { background: '#F5F5F3', color: '#378ADD' }
             }
-            onMouseEnter={e => { if (!isActive(NAV_AI.href, pathname)) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
-            onMouseLeave={e => { if (!isActive(NAV_AI.href, pathname)) (e.currentTarget as HTMLElement).style.background = ''; }}
+            onMouseEnter={e => { if (!isActive(NAV_AI.href, pathname)) (e.currentTarget as HTMLElement).style.background = '#EBF4FF'; }}
+            onMouseLeave={e => { if (!isActive(NAV_AI.href, pathname)) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
           >
-            <span style={isActive(NAV_AI.href, pathname) ? { color: '#185FA5' } : { color: '#378ADD' }}>
-              {NAV_AI.icon}
-            </span>
-            {NAV_AI.label}
+            <span style={{ color: isActive(NAV_AI.href, pathname) ? '#185FA5' : '#378ADD' }}>{NAV_AI.icon}</span>
+            <span className="font-semibold">{NAV_AI.label}</span>
             {plan === 'FREE' ? (
-              <span
-                className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                style={{ background: '#E6F1FB', color: '#185FA5' }}
-              >
-                PRO
-              </span>
+              <span className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-semibold" style={{ background: '#E6F1FB', color: '#185FA5' }}>PRO</span>
             ) : (
-              <span
-                className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-                style={{ background: '#E6F1FB', color: '#185FA5' }}
-              >
-                IA
-              </span>
+              <span className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: '#E6F1FB', color: '#185FA5' }}>IA</span>
             )}
           </Link>
         </div>
@@ -481,6 +486,95 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   );
 }
 
+// ─── Quick Add Button ─────────────────────────────────────────────────────────
+
+function QuickAddButton({ onNavClick }: { onNavClick?: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  const actions = [
+    {
+      href: '/invoices/new',
+      label: 'Nouvelle facture',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+          <line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
+          <line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+      ),
+    },
+    {
+      href: '/quotes/new',
+      label: 'Nouveau devis',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      href: '/expenses',
+      label: 'Nouvelle dépense',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+      ),
+    },
+    {
+      href: '/revenues',
+      label: 'Nouveau revenu',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+      {/* Actions */}
+      {open && (
+        <>
+          <div className="fixed inset-0" onClick={() => setOpen(false)} />
+          <div className="relative flex flex-col items-end gap-1.5 mb-1">
+            {actions.map((a) => (
+              <Link
+                key={a.href}
+                href={a.href}
+                onClick={() => { setOpen(false); onNavClick?.(); }}
+                className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-[13px] font-medium shadow-lg transition-transform hover:scale-105"
+                style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
+              >
+                <span style={{ color: '#378ADD' }}>{a.icon}</span>
+                {a.label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+      {/* Toggle */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all"
+        style={{ background: '#185FA5' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#14508a'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#185FA5'; }}
+      >
+        <svg
+          width="20" height="20" viewBox="0 0 20 20" fill="none"
+          style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+        >
+          <path d="M10 4v12M4 10h12" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 // ─── App Shell ────────────────────────────────────────────────────────────────
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -561,6 +655,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         <main>{children}</main>
       </div>
+
+      <QuickAddButton />
     </div>
   );
 }
