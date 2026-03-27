@@ -13,6 +13,7 @@ import { ThresholdAlert } from './components/ThresholdAlert';
 import { UrssafWidget } from './components/UrssafWidget';
 import { ForecastWidget } from './components/ForecastWidget';
 import { IrEstimateWidget } from './components/IrEstimateWidget';
+import OnboardingChecklist from '@/components/OnboardingChecklist';
 
 const IconRevenue = () => (
   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,6 +113,9 @@ export default function DashboardClient() {
           </button>
         </div>
       </div>
+
+      {/* Onboarding checklist — disparaît quand tout est complété */}
+      <OnboardingChecklist />
 
       {/* Threshold alert — always visible */}
       <ThresholdAlert {...threshold} />

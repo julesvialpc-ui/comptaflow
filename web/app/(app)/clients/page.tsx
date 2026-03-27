@@ -9,6 +9,8 @@ import { getActivePlan } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
 import UpgradeModal from '@/components/UpgradeModal';
+import { SkeletonList } from '@/components/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 
 function token() {
   return typeof window !== 'undefined' ? (localStorage.getItem('accessToken') ?? '') : '';
@@ -48,6 +50,7 @@ export default function ClientsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [usage, setUsage] = useState<PlanUsage | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const { toast } = useToast();
 
   // Debounce search
   useEffect(() => {
@@ -86,13 +89,14 @@ export default function ClientsPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Supprimer le client « ${name} » ? Ses factures ne seront pas supprimées.`)) return;
+    if (!confirm(`Supprimer le client « ${name} » ?`)) return;
     setActionId(id);
     try {
       await apiDeleteClient(token(), id);
       setClients((prev) => prev.filter((c) => c.id !== id));
+      toast(`Client « ${name} » supprimé.`, 'success');
     } catch {
-      alert('Impossible de supprimer ce client (vérifiez qu\'il n\'a pas de factures liées).');
+      toast('Impossible de supprimer ce client.', 'error');
     } finally {
       setActionId(null);
     }
@@ -187,7 +191,7 @@ export default function ClientsPage() {
 
         {/* List */}
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-sm text-zinc-400">Chargement…</div>
+          <SkeletonList rows={5} />
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 py-24 gap-3">
             <svg className="h-10 w-10 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

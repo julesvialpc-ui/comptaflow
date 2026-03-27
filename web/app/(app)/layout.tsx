@@ -10,6 +10,7 @@ import { getActivePlan } from '@/lib/auth';
 import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '@/lib/notifications';
 import { apiGetBusiness } from '@/lib/settings';
 import UpgradeModal from '@/components/UpgradeModal';
+import SearchModal from '@/components/SearchModal';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -213,8 +214,24 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </Link>
       </div>
 
+      {/* Search bar */}
+      <div className="px-2 pt-2 pb-1">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-search'))}
+          className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] text-left transition-colors"
+          style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0', color: '#888780' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          <span className="flex-1">Rechercher…</span>
+          <kbd className="hidden sm:inline text-[10px] rounded px-1.5 py-0.5" style={{ background: '#EDEDEB', color: '#888780' }}>⌘K</kbd>
+        </button>
+      </div>
+
       {/* Main nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
 
         {/* Activité */}
         <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#888780' }}>Activité</p>
@@ -581,6 +598,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Raccourcis clavier globaux
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true); }
+    }
+    function onSearchEvent() { setSearchOpen(true); }
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('open-search', onSearchEvent);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('open-search', onSearchEvent);
+    };
+  }, [router]);
 
   const pathname = usePathname();
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
@@ -657,6 +689,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       <QuickAddButton />
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

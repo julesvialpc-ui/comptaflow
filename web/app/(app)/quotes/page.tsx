@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Quote, QuoteStatus, Client } from '@/lib/types';
 import { apiGetQuotes, apiCreateQuote, apiUpdateQuote, apiDeleteQuote, apiConvertQuoteToInvoice } from '@/lib/quotes';
 import { eur } from '@/lib/format';
+import { SkeletonList } from '@/components/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -261,12 +263,17 @@ function QuoteForm({ initial, onSave, onClose, clients }: QuoteFormProps) {
 
 export default function QuotesPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<QuoteStatus | 'ALL'>('ALL');
+  const [tab, setTab] = useState<QuoteStatus | 'ALL'>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('quotes-tab') as QuoteStatus | 'ALL') ?? 'ALL';
+    return 'ALL';
+  });
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [converting, setConverting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [slider, setSlider] = useState<{ mode: 'create' } | { mode: 'edit'; quote: Quote } | null>(null);
 
@@ -310,14 +317,20 @@ export default function QuotesPage() {
     setSlider(null);
   }
 
+  function persistTab(v: QuoteStatus | 'ALL') {
+    setTab(v);
+    localStorage.setItem('quotes-tab', v);
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('Supprimer ce devis ? Cette action est irréversible.')) return;
     setDeleting(id);
     try {
       await apiDeleteQuote(tok(), id);
       setQuotes(prev => prev.filter(q => q.id !== id));
+      toast('Devis supprimé.', 'success');
     } catch {
-      alert('Erreur lors de la suppression.');
+      toast('Erreur lors de la suppression.', 'error');
     } finally {
       setDeleting(null);
     }
@@ -328,17 +341,40 @@ export default function QuotesPage() {
     setConverting(id);
     try {
       await apiConvertQuoteToInvoice(tok(), id);
-      // Refresh quotes
       const t = tok();
       const filters: { status?: QuoteStatus } = {};
       if (tab !== 'ALL') filters.status = tab;
       const updated = await apiGetQuotes(t, filters);
       setQuotes(updated);
-      alert('Devis converti en facture avec succès.');
+      toast('Devis converti en facture.', 'success');
     } catch {
-      alert('Erreur lors de la conversion.');
+      toast('Erreur lors de la conversion.', 'error');
     } finally {
       setConverting(null);
+    }
+  }
+
+  async function handleDuplicate(q: Quote) {
+    setDuplicating(q.id);
+    try {
+      const created = await apiCreateQuote(tok(), {
+        clientId: q.clientId ?? null,
+        status: 'DRAFT',
+        expiryDate: null,
+        notes: q.notes ?? null,
+        items: q.items.map(it => ({
+          description: it.description,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          vatRate: it.vatRate,
+        })),
+      });
+      setQuotes(prev => [created, ...prev]);
+      toast('Devis dupliqué.', 'success');
+    } catch {
+      toast('Erreur lors de la duplication.', 'error');
+    } finally {
+      setDuplicating(null);
     }
   }
 
@@ -388,7 +424,7 @@ export default function QuotesPage() {
         {TABS.map(t => (
           <button
             key={t.value}
-            onClick={() => setTab(t.value)}
+            onClick={() => persistTab(t.value)}
             className="rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
             style={tab === t.value ? { background: '#FFFFFF', color: '#1a1a18' } : { color: '#888780' }}
           >
@@ -417,14 +453,23 @@ export default function QuotesPage() {
       {/* Table */}
       <div className="rounded-lg overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-[13px]" style={{ color: '#888780' }}>Chargement…</div>
+          <div className="p-4"><SkeletonList rows={5} /></div>
         ) : quotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <svg className="h-8 w-8" style={{ color: '#D3D1C7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-[13px]" style={{ color: '#888780' }}>Aucun devis trouvé</p>
-            <button onClick={() => setSlider({ mode: 'create' })} className="text-[13px] font-medium" style={{ color: '#378ADD' }}>
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: '#F5F5F3' }}>
+              <svg className="h-7 w-7" style={{ color: '#C8C6C2' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-[14px] font-medium mb-1" style={{ color: '#1a1a18' }}>Aucun devis pour le moment</p>
+              <p className="text-[13px]" style={{ color: '#888780' }}>Créez votre premier devis en quelques secondes.</p>
+            </div>
+            <button onClick={() => setSlider({ mode: 'create' })}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-white"
+              style={{ background: '#185FA5' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Créer un devis
             </button>
           </div>
@@ -477,6 +522,20 @@ export default function QuotesPage() {
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      {/* Duplicate */}
+                      <button
+                        onClick={() => handleDuplicate(q)}
+                        disabled={duplicating === q.id}
+                        className="rounded p-1.5 transition-colors disabled:opacity-40"
+                        style={{ color: '#888780' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                        title="Dupliquer"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
                       </button>
                       {/* Convert to Invoice (only ACCEPTED) */}
