@@ -319,9 +319,9 @@ export default function RevenuesPage() {
   const periodLabel = period === 'month' ? 'ce mois' : period === 'year' ? 'cette année' : 'toutes périodes';
 
   return (
-    <div className="p-6 space-y-4">
-      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-4">
+      <header className="border-b border-[#E5E4E0] bg-white px-4 py-4 -mx-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Revenus</h1>
             <p className="text-sm text-zinc-500">{count} revenu{count !== 1 ? 's' : ''} · {periodLabel}</p>
@@ -333,14 +333,15 @@ export default function RevenuesPage() {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Nouveau revenu
+            <span className="hidden sm:inline">Nouveau revenu</span>
+            <span className="sm:hidden">Nouveau</span>
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6 space-y-5">
+      <main className="space-y-5">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: `Total HT (${periodLabel})`,  value: eur(total),      sub: `dont ${eur(vatTotal)} de TVA collectée` },
             { label: 'Revenus',                     value: String(count),   sub: 'transactions'                            },
@@ -517,7 +518,7 @@ export default function RevenuesPage() {
         <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setSlider(null)} />
       )}
 
-      <div className={`fixed inset-y-0 right-0 z-50 w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${slider ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${slider ? 'translate-x-0' : 'translate-x-full'}`}>
         {slider && (
           <RevenueForm
             initial={slider.mode === 'edit' ? slider.revenue : undefined}

@@ -419,10 +419,10 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="border-b border-[#E5E4E0] bg-white px-4 py-4 -mx-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Dépenses</h1>
             <p className="text-sm text-zinc-500">{count} dépense{count !== 1 ? 's' : ''} · {periodLabel}</p>
@@ -434,14 +434,15 @@ export default function ExpensesPage() {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Nouvelle dépense
+            <span className="hidden sm:inline">Nouvelle dépense</span>
+            <span className="sm:hidden">Nouveau</span>
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6 space-y-5">
+      <main className="space-y-5">
         {/* Stats cards */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: `Total HT (${periodLabel})`,   value: eur(total),      sub: `dont ${eur(vatTotal)} de TVA`     },
             { label: 'Déductible HT',                value: eur(deductible), sub: `${Math.round(deductible / (total || 1) * 100)} % du total` },
@@ -663,7 +664,7 @@ export default function ExpensesPage() {
 
       {/* Slide-over panel */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${
           slider ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
