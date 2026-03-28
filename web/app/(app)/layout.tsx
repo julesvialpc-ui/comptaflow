@@ -729,7 +729,7 @@ function MobileBottomNav({ onMoreClick, onAddClick }: { onMoreClick: () => void;
             <circle cx="8" cy="7" r="1" fill="currentColor" />
             <circle cx="11" cy="7" r="1" fill="currentColor" />
           </svg>
-          <span className="text-[9px] font-medium">Assistant</span>
+          <span className="text-[9px] font-medium">Konta IA</span>
         </Link>
 
         {/* Center + button */}
