@@ -421,9 +421,16 @@ export default function QuotesPage() {
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
-      <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
+      {/* Tabs — select on mobile, pill bar on desktop */}
+      <select
+        className="sm:hidden w-full rounded-lg border px-3 py-2.5 text-[14px] font-medium appearance-none"
+        style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
+        value={tab}
+        onChange={(e) => persistTab(e.target.value as QuoteStatus | 'ALL')}
+      >
+        {TABS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </select>
+      <div className="hidden sm:flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
         {TABS.map(t => (
           <button
             key={t.value}
@@ -434,7 +441,6 @@ export default function QuotesPage() {
             {t.label}
           </button>
         ))}
-      </div>
       </div>
 
       {/* Search */}
