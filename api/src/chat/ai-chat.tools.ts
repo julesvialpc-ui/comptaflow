@@ -72,4 +72,55 @@ export const AI_CHAT_TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+  {
+    name: 'get_clients_summary',
+    description: "Retourne le top clients par chiffre d'affaires, les devis en attente et les clients récents.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        top: {
+          type: 'number',
+          description: 'Nombre de clients à retourner dans le top (défaut: 5)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'get_employees_summary',
+    description: "Retourne la liste des employés actifs, la masse salariale brute mensuelle et les dernières notes de frais.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'get_revenue_goal_progress',
+    description: "Retourne la progression vers l'objectif de chiffre d'affaires annuel, le seuil micro-entreprise et les alertes de dépassement.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'create_expense',
+    description: "Crée une nouvelle dépense dans le système. Utiliser uniquement après confirmation explicite de l'utilisateur.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        description: { type: 'string', description: 'Description de la dépense' },
+        amount: { type: 'number', description: 'Montant HT en euros' },
+        category: {
+          type: 'string',
+          enum: ['OFFICE_SUPPLIES','TRAVEL','MEALS','EQUIPMENT','SOFTWARE','MARKETING','PROFESSIONAL_FEES','RENT','UTILITIES','INSURANCE','TAXES','SALARY','OTHER'],
+          description: 'Catégorie de la dépense',
+        },
+        supplier: { type: 'string', description: 'Nom du fournisseur (optionnel)' },
+        date: { type: 'string', description: 'Date au format YYYY-MM-DD (défaut: aujourd\'hui)' },
+      },
+      required: ['description', 'amount', 'category'],
+    },
+  },
 ];

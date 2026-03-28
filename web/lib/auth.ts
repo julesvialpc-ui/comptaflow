@@ -8,6 +8,7 @@ export interface AuthTokens {
 export interface UserSubscription {
   plan: 'FREE' | 'PRO' | 'BUSINESS';
   status: 'ACTIVE' | 'CANCELLED' | 'PAST_DUE' | 'TRIALING' | 'INACTIVE';
+  trialEndsAt?: string | null;
 }
 
 export interface AuthUser {

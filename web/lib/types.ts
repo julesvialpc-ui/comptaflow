@@ -210,6 +210,8 @@ export interface Expense {
   recurrenceInterval: RecurrenceInterval | null;
   userCategoryId: string | null;
   userCategory: { name: string; color: string } | null;
+  employeeId: string | null;
+  employee: { id: string; firstName: string; lastName: string } | null;
   createdAt: string;
 }
 
@@ -332,6 +334,22 @@ export interface Business {
   revenueGoal: number | null;
   isVatSubject: boolean;
   defaultVatRate: number;
+  rgeNumber: string | null;
+  decennialInsuranceRef: string | null;
+  kbisNumber: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Document {
+  id: string;
+  businessId: string;
+  name: string;
+  url: string;
+  category: string;
+  mimeType: string | null;
+  size: number;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }

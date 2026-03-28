@@ -12,4 +12,5 @@ export class CreateExpenseDto {
   isRecurring?: boolean;
   recurrenceInterval?: RecurrenceInterval;
   userCategoryId?: string;
+  employeeId?: string;
 }

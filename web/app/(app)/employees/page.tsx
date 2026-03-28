@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Employee, ContractType } from '@/lib/types';
+import { Employee, ContractType, Expense, ExpenseCategory } from '@/lib/types';
 import { eur } from '@/lib/format';
 import {
   apiGetEmployees,
@@ -9,8 +9,17 @@ import {
   apiCreateEmployee,
   apiUpdateEmployee,
   apiDeleteEmployee,
+  apiGetEmployeeExpenses,
   EmployeePayload,
 } from '@/lib/employees';
+import { apiCreateExpense, apiAnalyzeReceipt } from '@/lib/expenses';
+
+const EXPENSE_LABELS: Record<ExpenseCategory, string> = {
+  OFFICE_SUPPLIES: 'Fournitures', TRAVEL: 'Déplacements', MEALS: 'Repas',
+  EQUIPMENT: 'Matériel', SOFTWARE: 'Logiciels', MARKETING: 'Marketing',
+  PROFESSIONAL_FEES: 'Honoraires', RENT: 'Loyer', UTILITIES: 'Charges',
+  INSURANCE: 'Assurance', TAXES: 'Impôts', SALARY: 'Salaires', OTHER: 'Autre',
+};
 
 const CONTRACT_LABELS: Record<ContractType, string> = {
   CDI:        'CDI',
@@ -64,9 +73,45 @@ export default function EmployeesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // Employee expenses panel
+  const [expensesEmp, setExpensesEmp] = useState<Employee | null>(null);
+  const [empExpenses, setEmpExpenses] = useState<Expense[]>([]);
+  const [empExpensesLoading, setEmpExpensesLoading] = useState(false);
+  const [addingExpense, setAddingExpense] = useState(false);
+  const [expenseUploading, setExpenseUploading] = useState(false);
 
   function token() {
     return localStorage.getItem('accessToken') ?? '';
+  }
+
+  async function openExpenses(emp: Employee) {
+    setExpensesEmp(emp);
+    setEmpExpensesLoading(true);
+    try {
+      setEmpExpenses(await apiGetEmployeeExpenses(token(), emp.id));
+    } catch { /* ignore */ }
+    finally { setEmpExpensesLoading(false); }
+  }
+
+  async function handleAddExpenseFromReceipt(emp: Employee, file: File) {
+    setExpenseUploading(true);
+    try {
+      const analysis = await apiAnalyzeReceipt(token(), file);
+      await apiCreateExpense(token(), {
+        amount: analysis.amountTTC ?? 0,
+        vatAmount: analysis.vatAmount,
+        description: analysis.description,
+        supplier: analysis.supplier,
+        date: analysis.date,
+        receiptUrl: analysis.receiptUrl,
+        category: analysis.category,
+        isDeductible: true,
+        employeeId: emp.id,
+      });
+      // Refresh employee expenses
+      setEmpExpenses(await apiGetEmployeeExpenses(token(), emp.id));
+    } catch { /* ignore */ }
+    finally { setExpenseUploading(false); setAddingExpense(false); }
   }
 
   async function load(q?: string) {
@@ -283,6 +328,18 @@ export default function EmployeesPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => openExpenses(emp)}
+                    className="hidden sm:flex items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors"
+                    style={{ color: '#888780', background: '#F5F5F3' }}
+                    title="Notes de frais"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                    Frais
+                  </button>
                   <button
                     onClick={() => openEdit(emp)}
                     className="rounded-md p-1.5 transition-colors"
@@ -584,6 +641,152 @@ export default function EmployeesPage() {
                   {saving ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Ajouter'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee expenses panel */}
+      {expensesEmp && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
+          <div
+            className="relative w-full sm:max-w-xl max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-xl mx-0 sm:mx-4"
+            style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#E5E4E0' }}>
+              <div>
+                <h2 className="text-[15px] font-semibold" style={{ color: '#1a1a18' }}>
+                  Notes de frais — {expensesEmp.firstName} {expensesEmp.lastName}
+                </h2>
+                <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>
+                  {empExpenses.length} dépense{empExpenses.length !== 1 ? 's' : ''}
+                  {empExpenses.length > 0 && (
+                    <> · {eur(empExpenses.reduce((s, e) => s + e.amount, 0))} total</>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer text-white"
+                  style={{ background: expenseUploading ? '#BCBAB6' : '#185FA5' }}
+                >
+                  {expenseUploading ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent border-white inline-block" />
+                      Analyse…
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2v9M4 7l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                      </svg>
+                      Scanner un reçu
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    disabled={expenseUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && expensesEmp) handleAddExpenseFromReceipt(expensesEmp, file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                <button
+                  onClick={() => setExpensesEmp(null)}
+                  className="rounded-md p-1.5"
+                  style={{ color: '#888780' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 px-5 py-3">
+              {empExpensesLoading ? (
+                <div className="flex justify-center py-12">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: '#378ADD', borderTopColor: 'transparent' }} />
+                </div>
+              ) : empExpenses.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto mb-3" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect x="5" y="2" width="22" height="28" rx="3" stroke="#BCBAB6" strokeWidth="1.5"/>
+                    <path d="M10 10h12M10 15h12M10 20h8" stroke="#BCBAB6" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                  <p className="text-[13px] font-medium mb-1" style={{ color: '#1a1a18' }}>Aucune note de frais</p>
+                  <p className="text-[12px]" style={{ color: '#888780' }}>Scannez un reçu pour créer automatiquement une dépense.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {empExpenses.map((exp) => (
+                    <div
+                      key={exp.id}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+                      style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0' }}
+                    >
+                      {/* Receipt thumbnail */}
+                      {exp.receiptUrl ? (
+                        <a href={exp.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                          <div
+                            className="h-9 w-9 rounded overflow-hidden flex items-center justify-center"
+                            style={{ background: '#E5E4E0' }}
+                          >
+                            {exp.receiptUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={exp.receiptUrl} alt="reçu" className="h-full w-full object-cover" />
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M4 1h6l4 4v10H4V1z" stroke="#888780" strokeWidth="1.2" strokeLinejoin="round"/>
+                                <path d="M10 1v4h4" stroke="#888780" strokeWidth="1.2" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                        </a>
+                      ) : (
+                        <div
+                          className="flex-shrink-0 h-9 w-9 rounded flex items-center justify-center"
+                          style={{ background: '#E5E4E0' }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="1" width="12" height="14" rx="1.5" stroke="#BCBAB6" strokeWidth="1.2"/>
+                            <path d="M5 5h6M5 8h6M5 11h4" stroke="#BCBAB6" strokeWidth="1.2" strokeLinecap="round"/>
+                          </svg>
+                        </div>
+                      )}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium truncate" style={{ color: '#1a1a18' }}>
+                          {exp.description || exp.supplier || EXPENSE_LABELS[exp.category as ExpenseCategory] || exp.category}
+                        </p>
+                        <p className="text-[11px]" style={{ color: '#888780' }}>
+                          {exp.supplier && exp.description ? `${exp.supplier} · ` : ''}
+                          {EXPENSE_LABELS[exp.category as ExpenseCategory] || exp.category}
+                          {' · '}{new Date(exp.date).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="flex-shrink-0 text-right">
+                        <p className="text-[14px] font-semibold tabular-nums" style={{ color: '#1a1a18' }}>
+                          {eur(exp.amount)}
+                        </p>
+                        {exp.vatAmount ? (
+                          <p className="text-[11px]" style={{ color: '#888780' }}>TVA {eur(exp.vatAmount)}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

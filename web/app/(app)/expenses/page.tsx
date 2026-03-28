@@ -9,10 +9,11 @@ import {
   apiCreateExpense,
   apiUpdateExpense,
   apiDeleteExpense,
+  apiAnalyzeReceipt,
   ExpensePayload,
 } from '@/lib/expenses';
 import { apiGetUserCategories } from '@/lib/user-categories';
-import { eur } from '@/lib/format';
+import { eur, exportCsv } from '@/lib/format';
 
 // ─── Category config ──────────────────────────────────────────────────────────
 
@@ -320,6 +321,8 @@ export default function ExpensesPage() {
   // Slide-over
   const [slider, setSlider] = useState<{ mode: 'create' } | { mode: 'edit'; expense: Expense } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  // Receipt scanning
+  const [scanning, setScanning] = useState(false);
 
   // Fetch business VAT settings + user categories
   useEffect(() => {
@@ -400,6 +403,34 @@ export default function ExpensesPage() {
     }
   }
 
+  async function handleScanReceipt(file: File) {
+    setScanning(true);
+    try {
+      const analysis = await apiAnalyzeReceipt(tok(), file);
+      const vatRate = isVatSubject ? CATEGORY_VAT_RATE[analysis.category ?? 'OTHER'] : 0;
+      const ttc = analysis.amountTTC ?? 0;
+      const ht = vatRate > 0 ? ttc / (1 + vatRate) : ttc;
+      const tva = Math.round((ttc - ht) * 100) / 100;
+      const htRounded = Math.round(ht * 100) / 100;
+      const created = await apiCreateExpense(tok(), {
+        amount: htRounded,
+        vatAmount: tva,
+        description: analysis.description,
+        supplier: analysis.supplier,
+        date: analysis.date,
+        receiptUrl: analysis.receiptUrl,
+        category: analysis.category ?? 'OTHER',
+        isDeductible: true,
+      });
+      setExpenses((prev) => [created, ...prev]);
+      apiGetExpenseStats(tok(), (dateRange as { from?: string }).from, (dateRange as { to?: string }).to).then(setStats);
+    } catch {
+      // silently ignore scan errors
+    } finally {
+      setScanning(false);
+    }
+  }
+
   const total    = stats?.total    ?? 0;
   const vatTotal = stats?.vatTotal ?? 0;
   const count    = stats?.count    ?? 0;
@@ -427,16 +458,57 @@ export default function ExpensesPage() {
             <h1 className="text-xl font-bold text-zinc-900">Dépenses</h1>
             <p className="text-sm text-zinc-500">{count} dépense{count !== 1 ? 's' : ''} · {periodLabel}</p>
           </div>
-          <button
-            onClick={() => setSlider({ mode: 'create' })}
-            className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="hidden sm:inline">Nouvelle dépense</span>
-            <span className="sm:hidden">Nouveau</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Scan receipt button */}
+            <label
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer transition"
+              style={{
+                background: scanning ? '#F5F5F3' : '#FFFFFF',
+                border: '0.5px solid #E5E4E0',
+                color: scanning ? '#BCBAB6' : '#6B6868',
+                opacity: scanning ? 0.7 : 1,
+              }}
+              title="Scanner un reçu et créer automatiquement une dépense"
+            >
+              {scanning ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: '#378ADD', borderTopColor: 'transparent' }} />
+                  <span className="hidden sm:inline">Analyse…</span>
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                    <rect x="10" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                    <rect x="1" y="10" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                    <path d="M10 10h5M10 13h2M13 10v5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                  <span className="hidden sm:inline">Scanner un reçu</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                disabled={scanning}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleScanReceipt(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            <button
+              onClick={() => setSlider({ mode: 'create' })}
+              className="flex items-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2 text-sm font-semibold text-white hover:opacity-80 transition"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="hidden sm:inline">Nouvelle dépense</span>
+              <span className="sm:hidden">Nouveau</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -458,7 +530,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3">
           {/* Period */}
           <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-full sm:w-fit">
             {(['month', 'year', 'all'] as const).map((p) => (
@@ -471,16 +543,45 @@ export default function ExpensesPage() {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z" />
-            </svg>
-            <input type="text" placeholder="Description, fournisseur…" value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+          {/* Search + export */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z" />
+              </svg>
+              <input type="text" placeholder="Description, fournisseur…" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+            </div>
+            {expenses.length > 0 && (
+              <button
+                onClick={() => {
+                  const header = ['Date', 'Description', 'Fournisseur', 'Catégorie', 'Montant HT', 'TVA', 'TTC', 'Déductible'];
+                  const rows = expenses.map((e) => [
+                    new Date(e.date).toLocaleDateString('fr-FR'),
+                    e.description ?? '',
+                    e.supplier ?? '',
+                    CAT[e.category]?.label ?? e.category,
+                    e.amount.toFixed(2).replace('.', ','),
+                    e.vatAmount.toFixed(2).replace('.', ','),
+                    (e.amount + e.vatAmount).toFixed(2).replace('.', ','),
+                    e.isDeductible ? 'Oui' : 'Non',
+                  ]);
+                  exportCsv(`dépenses_${periodLabel.replace(/ /g, '_')}.csv`, [header, ...rows]);
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition flex-shrink-0"
+                style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0', color: '#6B6868' }}
+                title="Exporter en CSV (Excel)"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2v9M4 7l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="2" y="12" width="12" height="2.5" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                CSV
+              </button>
+            )}
           </div>
         </div>
 
@@ -696,6 +797,61 @@ export default function ExpensesPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+        {/* VAT recovery section — only for VAT-subject businesses */}
+        {isVatSubject && vatTotal > 0 && (
+          <div className="rounded-xl border border-[#E5E4E0] bg-white p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-700">TVA récupérable</h2>
+                <p className="text-xs text-zinc-400 mt-0.5">TVA déductible sur vos achats — {periodLabel}</p>
+              </div>
+              <span className="text-lg font-bold tabular-nums" style={{ color: '#185FA5' }}>{eur(vatTotal)}</span>
+            </div>
+
+            {/* By category */}
+            <div className="space-y-2 mb-4">
+              {(stats?.byCategory ?? [])
+                .map(({ category }) => {
+                  const catExpenses = expenses.filter(e => e.category === category && e.vatAmount > 0);
+                  const catVat = catExpenses.reduce((s, e) => s + e.vatAmount, 0);
+                  return { category, catVat };
+                })
+                .filter(({ catVat }) => catVat > 0)
+                .sort((a, b) => b.catVat - a.catVat)
+                .map(({ category, catVat }) => (
+                  <div key={category} className="flex items-center gap-3">
+                    <span className={`w-28 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${CAT[category].color}`}>
+                      {CAT[category].label}
+                    </span>
+                    <div className="flex-1 h-1.5 rounded-full bg-zinc-100">
+                      <div
+                        className="h-1.5 rounded-full transition-all"
+                        style={{ width: `${vatTotal > 0 ? (catVat / vatTotal * 100).toFixed(1) : 0}%`, background: '#E6F1FB', borderRight: '2px solid #378ADD' }}
+                      />
+                    </div>
+                    <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums" style={{ color: '#185FA5' }}>
+                      {eur(catVat)}
+                    </span>
+                    <span className="w-12 shrink-0 text-right text-xs text-zinc-400 tabular-nums">
+                      {CATEGORY_VAT_RATE[category] > 0 ? `${(CATEGORY_VAT_RATE[category] * 100).toFixed(0)} %` : '—'}
+                    </span>
+                  </div>
+                ))}
+            </div>
+
+            {/* Declaration reminder */}
+            <div className="rounded-lg px-3 py-2.5 flex items-start gap-2.5" style={{ background: '#E6F1FB' }}>
+              <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="#185FA5" strokeWidth="1.2"/>
+                <path d="M8 7v4M8 5v1" stroke="#185FA5" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+              <p className="text-xs" style={{ color: '#185FA5' }}>
+                Ces <strong>{eur(vatTotal)}</strong> de TVA sont à déclarer sur votre déclaration CA3/CA12 pour la période concernée.
+                Conservez les justificatifs originaux.
+              </p>
             </div>
           </div>
         )}

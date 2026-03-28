@@ -65,6 +65,9 @@ export interface BusinessPayload {
   isVatSubject?: boolean;
   defaultVatRate?: number;
   hasEmployees?: boolean;
+  rgeNumber?: string;
+  decennialInsuranceRef?: string;
+  kbisNumber?: string;
 }
 
 export async function apiGetBusiness(token: string): Promise<Business | null> {

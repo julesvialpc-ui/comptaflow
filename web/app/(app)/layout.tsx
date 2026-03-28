@@ -299,6 +299,26 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           </Link>
         )}
 
+        {/* Documents */}
+        {(() => {
+          const href = '/documents';
+          const active = isActive(href, pathname);
+          return (
+            <Link href={href} onClick={onNavClick}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
+              style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Documents
+            </Link>
+          );
+        })()}
+
         {/* Assistant IA */}
         <div className="pt-3">
           <Link href={NAV_AI.href} onClick={onNavClick}
@@ -364,7 +384,29 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             </button>
           </div>
         )}
-        {plan !== 'FREE' && (
+        {plan !== 'FREE' && user?.subscription?.status === 'TRIALING' && (() => {
+          const daysLeft = user.subscription?.trialEndsAt
+            ? Math.max(0, Math.ceil((new Date(user.subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+            : null;
+          return (
+            <div className="mx-1 mb-2 rounded-lg px-3 py-2.5" style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A' }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" stroke="#D97706" strokeWidth="1.2"/>
+                  <path d="M8 5v4M8 10.5v.5" stroke="#D97706" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                <span className="text-[11px] font-semibold" style={{ color: '#D97706' }}>Période d&apos;essai</span>
+              </div>
+              <p className="text-[11px]" style={{ color: '#92400E' }}>
+                {daysLeft !== null ? `${daysLeft} jour${daysLeft !== 1 ? 's' : ''} restant${daysLeft !== 1 ? 's' : ''}` : 'En cours'}
+              </p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#B45309' }}>
+                Votre carte sera débitée à la fin.
+              </p>
+            </div>
+          );
+        })()}
+        {plan !== 'FREE' && user?.subscription?.status !== 'TRIALING' && (
           <div className="mx-1 mb-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: '#F0F7FF' }}>
             <span className="text-[12px] font-medium" style={{ color: '#185FA5' }}>Plan {plan}</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#185FA5">
@@ -612,7 +654,8 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
     { href: '/expenses', label: 'Dépenses', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2"/></svg> },
     { href: '/time-tracking', label: 'Temps', pro: true, icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     { href: '/tax-reports', label: 'Rapports fiscaux', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M2 13 L6 7 L10 10 L14 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    { href: '/chat', label: 'Assistant IA', pro: plan === 'FREE', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M5 14l1.5-2h3L11 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5" cy="7" r="1" fill="currentColor"/><circle cx="8" cy="7" r="1" fill="currentColor"/><circle cx="11" cy="7" r="1" fill="currentColor"/></svg> },
+    { href: '/invoices', label: 'Factures', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+    { href: '/documents', label: 'Documents', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     ...(hasEmployees ? [{ href: '/employees', label: 'Mes employés', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><circle cx="10.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 13c0-2.21 2.015-4 4.5-4s4.5 1.79 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M11 9.2c1.5.4 2.7 1.8 2.7 3.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }] : []),
     { href: '/settings', label: 'Paramètres', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
   ];

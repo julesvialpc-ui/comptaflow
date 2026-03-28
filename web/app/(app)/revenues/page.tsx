@@ -12,7 +12,7 @@ import {
   RevenuePayload,
 } from '@/lib/revenues';
 import { apiGetUserCategories } from '@/lib/user-categories';
-import { eur } from '@/lib/format';
+import { eur, exportCsv } from '@/lib/format';
 
 // ─── Category config ──────────────────────────────────────────────────────────
 
@@ -368,15 +368,45 @@ export default function RevenuesPage() {
               </button>
             ))}
           </div>
-          <div className="relative w-full sm:w-64">
-            <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z" />
-            </svg>
-            <input type="text" placeholder="Description, client…" value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z" />
+              </svg>
+              <input type="text" placeholder="Description, client…" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+            </div>
+            {revenues.length > 0 && (
+              <button
+                onClick={() => {
+                  const periodLabel = period === 'month' ? 'ce_mois' : period === 'year' ? 'cette_année' : 'tout';
+                  const header = ['Date', 'Description', 'Client', 'Catégorie', 'Montant HT', 'TVA', 'TTC', 'Récurrent'];
+                  const rows = revenues.map((r) => [
+                    new Date(r.date).toLocaleDateString('fr-FR'),
+                    r.description ?? '',
+                    r.clientName ?? '',
+                    CAT[r.category]?.label ?? r.category,
+                    r.amount.toFixed(2).replace('.', ','),
+                    r.vatAmount.toFixed(2).replace('.', ','),
+                    (r.amount + r.vatAmount).toFixed(2).replace('.', ','),
+                    r.isRecurring ? 'Oui' : 'Non',
+                  ]);
+                  exportCsv(`revenus_${periodLabel}.csv`, [header, ...rows]);
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition flex-shrink-0"
+                style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0', color: '#6B6868' }}
+                title="Exporter en CSV (Excel)"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2v9M4 7l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="2" y="12" width="12" height="2.5" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                CSV
+              </button>
+            )}
           </div>
         </div>
 

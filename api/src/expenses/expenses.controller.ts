@@ -8,7 +8,11 @@ import {
   Body,
   Query,
   ForbiddenException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ExpenseCategory } from '@prisma/client';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -19,6 +23,17 @@ import { AuthUser } from '../common/types/auth-user.type';
 @Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
+
+  // ── Analyze receipt (AI) ──────────────────────────────────────────────────
+  @Post('analyze-receipt')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  analyzeReceipt(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.expensesService.analyzeReceipt(file);
+  }
 
   // ── Stats (before :id to avoid route conflict) ────────────────────────────
   @Get('stats')

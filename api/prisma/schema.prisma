@@ -183,6 +183,10 @@ model Business {
   isVatSubject   Boolean @default(false)
   defaultVatRate Float   @default(0.20)
   hasEmployees   Boolean @default(false)
+  // Artisan-specific fields
+  rgeNumber             String?   // Certification RGE
+  decennialInsuranceRef String?   // N° assurance décennale
+  kbisNumber            String?   // Extrait Kbis
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -198,6 +202,7 @@ model Business {
   categoryBudgets  CategoryBudget[]
   timeEntries      TimeEntry[]
   employees        Employee[]
+  documents        Document[]
 
   @@map("businesses")
 }
@@ -335,6 +340,7 @@ model Transaction {
 model Expense {
   id                 String              @id @default(uuid())
   businessId         String
+  employeeId         String?
   category           ExpenseCategory     @default(OTHER)
   amount             Float
   vatAmount          Float               @default(0)
@@ -350,6 +356,7 @@ model Expense {
   updatedAt          DateTime            @updatedAt
 
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee     Employee?     @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   userCategory UserCategory? @relation(fields: [userCategoryId], references: [id], onDelete: SetNull)
 
   @@map("expenses")
@@ -502,6 +509,7 @@ model Employee {
   updatedAt            DateTime     @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  expenses Expense[]
 
   @@map("employees")
 }
@@ -524,4 +532,21 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  businessId String
+  name       String
+  url        String
+  category   String   @default("OTHER")
+  mimeType   String?
+  size       Int      @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }

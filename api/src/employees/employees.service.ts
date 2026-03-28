@@ -60,6 +60,15 @@ export class EmployeesService {
     return this.prisma.employee.delete({ where: { id } });
   }
 
+  async getExpenses(id: string, businessId: string) {
+    await this.findOne(id, businessId);
+    return this.prisma.expense.findMany({
+      where: { employeeId: id, businessId },
+      include: { userCategory: { select: { name: true, color: true } } },
+      orderBy: { date: 'desc' },
+    });
+  }
+
   async getStats(businessId: string) {
     const employees = await this.prisma.employee.findMany({
       where: { businessId },

@@ -49,8 +49,10 @@ const SUGGESTIONS = [
   { icon: '🧾', label: 'Factures impayées', prompt: 'Quelles sont mes factures impayées en ce moment ?' },
   { icon: '📅', label: 'Prochaines échéances fiscales', prompt: 'Quelles sont mes prochaines déclarations fiscales à venir ?' },
   { icon: '💸', label: 'Dépenses récentes', prompt: 'Montre-moi mes dernières dépenses.' },
-  { icon: '📈', label: 'Bilan annuel', prompt: "Quel est mon bilan financier pour l'année en cours ?" },
+  { icon: '📈', label: 'Objectif CA annuel', prompt: "Où en suis-je par rapport à mon objectif de chiffre d'affaires ?" },
   { icon: '🏦', label: 'Cotisations URSSAF', prompt: 'Comment sont calculées mes cotisations URSSAF ? Quel est mon taux ?' },
+  { icon: '👥', label: 'Top clients', prompt: 'Qui sont mes meilleurs clients par chiffre d\'affaires ?' },
+  { icon: '👷', label: 'Masse salariale', prompt: 'Quel est le coût total de mes employés ce mois-ci ?' },
 ];
 
 // ─── Tool-name labels ─────────────────────────────────────────────────────────
@@ -61,6 +63,10 @@ const TOOL_LABELS: Record<string, string> = {
   get_recent_expenses: 'Récupération des dépenses…',
   get_tax_deadlines: 'Vérification des échéances fiscales…',
   get_unpaid_invoices_total: 'Calcul des impayés…',
+  get_clients_summary: 'Analyse des clients…',
+  get_employees_summary: 'Consultation des employés…',
+  get_revenue_goal_progress: "Vérification de l'objectif CA…",
+  create_expense: 'Création de la dépense…',
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

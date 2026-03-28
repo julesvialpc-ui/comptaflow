@@ -292,6 +292,9 @@ function BusinessTab({ token }: { token: string }) {
           iban: b.iban ?? '',
           bic: b.bic ?? '',
           revenueGoal: b.revenueGoal ?? undefined,
+          rgeNumber: b.rgeNumber ?? '',
+          decennialInsuranceRef: b.decennialInsuranceRef ?? '',
+          kbisNumber: b.kbisNumber ?? '',
         });
         setIsVatSubject(b.isVatSubject ?? false);
         setHasEmployees(b.hasEmployees ?? false);
@@ -434,6 +437,24 @@ function BusinessTab({ token }: { token: string }) {
           <Field label="N° TVA intracommunautaire">
             <Input value={form.vatNumber ?? ''} onChange={set('vatNumber')} placeholder="FR12345678901" />
           </Field>
+          <div className="sm:col-span-2">
+            <div className="pt-4 border-t border-[#E5E4E0]">
+              <p className="text-[12px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888780' }}>Artisans &amp; BTP (optionnel)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="N° Kbis" hint="Extrait d'immatriculation">
+                  <Input value={form.kbisNumber ?? ''} onChange={set('kbisNumber')} placeholder="123456789" />
+                </Field>
+                <Field label="Certification RGE" hint="Reconnu Garant de l'Environnement">
+                  <Input value={form.rgeNumber ?? ''} onChange={set('rgeNumber')} placeholder="E-E230068" />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="N° Assurance décennale" hint="Référence de votre assurance décennale (garantie 10 ans)">
+                    <Input value={form.decennialInsuranceRef ?? ''} onChange={set('decennialInsuranceRef')} placeholder="Réf : AXA-2023-XXXXX" />
+                  </Field>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -562,11 +583,33 @@ function SubscriptionTab({ token }: { token: string }) {
   const plan = sub?.plan ?? 'FREE';
   const meta = PLAN_META[plan] ?? PLAN_META.FREE;
   const isPaid = plan === 'PRO' || plan === 'BUSINESS';
+  const isTrialing = sub?.status === 'TRIALING';
   const UPGRADE_PLANS = (['PRO', 'BUSINESS'] as const).filter((p) => p !== plan);
+
+  // Trial days remaining
+  const trialDaysLeft = sub?.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div className="max-w-2xl space-y-6">
       {alert && <Alert type={alert.type} message={alert.msg} onClose={() => setAlert(null)} />}
+
+      {/* Trial banner */}
+      {isTrialing && trialDaysLeft !== null && (
+        <div className="rounded-xl px-4 py-3 flex items-start gap-3" style={{ background: '#FFFBEB', border: '0.5px solid #FCD34D' }}>
+          <span className="text-xl flex-shrink-0">⏳</span>
+          <div className="flex-1">
+            <p className="text-[13px] font-semibold" style={{ color: '#B45309' }}>
+              Période d&apos;essai — {trialDaysLeft} jour{trialDaysLeft !== 1 ? 's' : ''} restant{trialDaysLeft !== 1 ? 's' : ''}
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: '#92400E' }}>
+              Votre carte sera débitée à la fin de l&apos;essai. Aucun frais pendant la période d&apos;essai.
+              {sub.trialEndsAt && ` Fin le ${new Date(sub.trialEndsAt).toLocaleDateString('fr-FR')}.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Current plan */}
       <div>
@@ -652,9 +695,9 @@ function SubscriptionTab({ token }: { token: string }) {
                     className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#378ADD] py-2 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     {isLoading && <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                    Passer au plan {m.label}
+                    Essayer gratuitement 14 jours
                   </button>
-                  <p className="text-center text-[10px] text-zinc-400">Sans engagement · Annulez à tout moment</p>
+                  <p className="text-center text-[10px] text-zinc-400">Carte requise · Sans engagement · Annulez à tout moment</p>
                 </div>
               );
             })}

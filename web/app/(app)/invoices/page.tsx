@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Invoice, InvoiceStatus, RecurrenceInterval } from '@/lib/types';
-import { apiGetInvoices, apiDeleteInvoice, apiCreateInvoice, apiNextInvoiceNumber, getPdfUrl } from '@/lib/invoices';
+import { apiGetInvoices, apiDeleteInvoice, apiCreateInvoice, apiNextInvoiceNumber, apiUpdateStatus, getPdfUrl } from '@/lib/invoices';
 import { authFetch, getActivePlan } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
-import { eur } from '@/lib/format';
+import { eur, exportCsv } from '@/lib/format';
 import { STATUS_LABEL, STATUS_COLOR } from '@/lib/format';
 import UpgradeModal from '@/components/UpgradeModal';
 import { SkeletonList } from '@/components/Skeleton';
@@ -62,6 +62,7 @@ export default function InvoicesPage() {
   const [sortField, setSortField] = useState<'number' | 'client' | 'issueDate' | 'dueDate' | 'total' | 'status'>('issueDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [actionMenuInv, setActionMenuInv] = useState<Invoice | null>(null);
@@ -131,6 +132,19 @@ export default function InvoicesPage() {
       toast('Erreur lors de la suppression.', 'error');
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function handleMarkPaid(id: string) {
+    setMarkingPaid(id);
+    try {
+      const updated = await apiUpdateStatus(token(), id, 'PAID');
+      setInvoices((prev) => prev.map((i) => (i.id === id ? updated : i)));
+      toast('Facture marquée comme payée.', 'success');
+    } catch {
+      toast('Erreur lors de la mise à jour.', 'error');
+    } finally {
+      setMarkingPaid(null);
     }
   }
 
@@ -238,26 +252,53 @@ export default function InvoicesPage() {
             )}
           </p>
         </div>
-        {atInvoiceLimit ? (
-          <button
-            onClick={() => setShowUpgrade(true)}
-            className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium"
-            style={{ background: '#185FA5', color: '#FFFFFF' }}
-          >
-            ✦ Passer au Pro
-          </button>
-        ) : (
-          <Link
-            href="/invoices/new"
-            className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-80"
-            style={{ background: '#378ADD', color: '#E6F1FB' }}
-          >
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nouvelle facture
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {filtered.length > 0 && (
+            <button
+              onClick={() => {
+                const header = ['N°', 'Client', 'Émise le', 'Échéance', 'Montant', 'Statut'];
+                const rows = filtered.map((inv) => [
+                  inv.number,
+                  inv.client?.name ?? '',
+                  fmtDate(inv.issueDate),
+                  fmtDate(inv.dueDate),
+                  inv.total.toFixed(2).replace('.', ','),
+                  STATUS_LABEL[inv.status] ?? inv.status,
+                ]);
+                exportCsv(`factures_${tab.toLowerCase()}.csv`, [header, ...rows]);
+              }}
+              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-medium transition"
+              style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0', color: '#6B6868' }}
+              title="Exporter en CSV"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2v9M4 7l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="2" y="12" width="12" height="2.5" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              CSV
+            </button>
+          )}
+          {atInvoiceLimit ? (
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium"
+              style={{ background: '#185FA5', color: '#FFFFFF' }}
+            >
+              ✦ Passer au Pro
+            </button>
+          ) : (
+            <Link
+              href="/invoices/new"
+              className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-80"
+              style={{ background: '#378ADD', color: '#E6F1FB' }}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nouvelle facture
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Tabs — select on mobile, pill bar on desktop */}
@@ -368,6 +409,11 @@ export default function InvoicesPage() {
             icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>,
             onClick: () => window.location.href = `/invoices/${actionMenuInv.id}`,
           },
+          ...(actionMenuInv.status === 'SENT' || actionMenuInv.status === 'OVERDUE' ? [{
+            label: 'Marquer comme payée',
+            icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+            onClick: () => { handleMarkPaid(actionMenuInv.id); setActionMenuInv(null); },
+          }] : []),
           {
             label: 'Aperçu PDF',
             icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>,
@@ -506,6 +552,25 @@ export default function InvoicesPage() {
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
+                        </button>
+                      )}
+                      {(inv.status === 'SENT' || inv.status === 'OVERDUE') && (
+                        <button
+                          onClick={() => handleMarkPaid(inv.id)}
+                          disabled={markingPaid === inv.id}
+                          className="rounded p-1.5 transition-colors disabled:opacity-40"
+                          style={{ color: '#3B6D11' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F0F9EC'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                          title="Marquer comme payée"
+                        >
+                          {markingPaid === inv.id ? (
+                            <span className="block h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: '#3B6D11', borderTopColor: 'transparent' }} />
+                          ) : (
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
                         </button>
                       )}
                       <button onClick={() => handleDelete(inv.id)} disabled={deleting === inv.id} className="rounded p-1.5 transition-colors disabled:opacity-40" style={{ color: '#888780' }}

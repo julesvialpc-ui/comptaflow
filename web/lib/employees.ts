@@ -1,4 +1,4 @@
-import { Employee, EmployeeStats, ContractType } from './types';
+import { Employee, EmployeeStats, ContractType, Expense } from './types';
 import { authFetch } from './auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
@@ -83,4 +83,10 @@ export async function apiDeleteEmployee(token: string, id: string): Promise<void
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());
+}
+
+export async function apiGetEmployeeExpenses(token: string, employeeId: string): Promise<Expense[]> {
+  const res = await authFetch(`${API}/employees/${employeeId}/expenses`, { headers: authHeaders(token) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }

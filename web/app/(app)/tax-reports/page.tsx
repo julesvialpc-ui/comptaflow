@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TaxReport, TaxReportStatus, TaxReportType, TaxPreview } from '@/lib/types';
+import { TaxReport, TaxReportStatus, TaxReportType, TaxPreview, Expense, ExpenseCategory } from '@/lib/types';
 import {
   apiGetTaxReports, apiGetUpcoming, apiPreview,
   apiCreateTaxReport, apiUpdateTaxReport, apiUpdateTaxStatus, apiDeleteTaxReport,
   getExpenseReportPdfUrl, TaxReportPayload,
 } from '@/lib/tax-reports';
+import { apiGetExpenses, apiCreateExpense, apiDeleteExpense, apiAnalyzeReceipt, ReceiptAnalysis } from '@/lib/expenses';
 import { eur } from '@/lib/format';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -249,91 +250,433 @@ function ReportForm({ initial, onSave, onClose }: ReportFormProps) {
   );
 }
 
+// ─── Category labels ─────────────────────────────────────────────────────────
+
+const CAT_LABELS: Record<ExpenseCategory, string> = {
+  OFFICE_SUPPLIES: 'Fournitures',
+  TRAVEL: 'Transport',
+  MEALS: 'Repas',
+  EQUIPMENT: 'Équipement',
+  SOFTWARE: 'Logiciel',
+  MARKETING: 'Marketing',
+  PROFESSIONAL_FEES: 'Honoraires',
+  RENT: 'Loyer',
+  UTILITIES: 'Charges',
+  INSURANCE: 'Assurance',
+  TAXES: 'Taxes',
+  SALARY: 'Salaire',
+  OTHER: 'Autre',
+};
+
+const CAT_COLORS: Record<ExpenseCategory, string> = {
+  OFFICE_SUPPLIES: '#6366F1', TRAVEL: '#0EA5E9', MEALS: '#F97316',
+  EQUIPMENT: '#8B5CF6', SOFTWARE: '#06B6D4', MARKETING: '#EC4899',
+  PROFESSIONAL_FEES: '#185FA5', RENT: '#64748B', UTILITIES: '#84CC16',
+  INSURANCE: '#F59E0B', TAXES: '#EF4444', SALARY: '#10B981', OTHER: '#9CA3AF',
+};
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
 // ─── Note de frais tab ────────────────────────────────────────────────────────
 
 function ExpenseReportTab() {
-  const [from, setFrom] = useState(firstDayOfMonth());
-  const [to, setTo]     = useState(lastDayOfMonth());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleDownload() {
+  // Receipt list (expenses with receiptUrl)
+  const [receipts, setReceipts] = useState<Expense[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+
+  // Upload flow
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [pendingAnalysis, setPendingAnalysis] = useState<{ file: File; preview: string; analysis: ReceiptAnalysis } | null>(null);
+
+  // Confirm form fields
+  const [cfSupplier, setCfSupplier] = useState('');
+  const [cfDate, setCfDate] = useState('');
+  const [cfAmountTTC, setCfAmountTTC] = useState('');
+  const [cfVat, setCfVat] = useState('');
+  const [cfCategory, setCfCategory] = useState<ExpenseCategory>('OTHER');
+  const [cfDescription, setCfDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // PDF export
+  const [showExport, setShowExport] = useState(false);
+  const [from, setFrom] = useState(firstDayOfMonth());
+  const [to, setTo] = useState(lastDayOfMonth());
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Enlarged image
+  const [enlarged, setEnlarged] = useState<string | null>(null);
+
+  useEffect(() => {
     const t = tok();
-    setLoading(true);
-    setError(null);
+    if (!t) return;
+    setLoadingList(true);
+    apiGetExpenses(t)
+      .then((list) => setReceipts(list.filter((e) => e.receiptUrl)))
+      .catch(() => {})
+      .finally(() => setLoadingList(false));
+  }, []);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const preview = URL.createObjectURL(file);
+    setAnalyzing(true);
+    setAnalyzeError(null);
     try {
-      const res = await fetch(getExpenseReportPdfUrl(from, to), { headers: { Authorization: `Bearer ${t}` } });
-      if (!res.ok) {
-        const msg = await res.text().catch(() => `Erreur ${res.status}`);
-        throw new Error(msg || `Erreur ${res.status}`);
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `note-de-frais-${from.slice(0, 7)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Erreur lors de la génération');
+      const analysis = await apiAnalyzeReceipt(tok(), file);
+      setPendingAnalysis({ file, preview, analysis });
+      setCfSupplier(analysis.supplier ?? '');
+      setCfDate(analysis.date ?? new Date().toISOString().slice(0, 10));
+      setCfAmountTTC(analysis.amountTTC != null ? String(analysis.amountTTC) : '');
+      setCfVat(analysis.vatAmount != null ? String(analysis.vatAmount) : '');
+      setCfCategory((analysis.category as ExpenseCategory) ?? 'OTHER');
+      setCfDescription(analysis.description ?? '');
+    } catch (err) {
+      setAnalyzeError(err instanceof Error ? err.message : 'Erreur d\'analyse');
     } finally {
-      setLoading(false);
+      setAnalyzing(false);
     }
   }
 
+  async function handleConfirm() {
+    if (!pendingAnalysis) return;
+    setSaving(true);
+    try {
+      const expense = await apiCreateExpense(tok(), {
+        supplier: cfSupplier || undefined,
+        date: cfDate,
+        amount: parseFloat(cfAmountTTC) || 0,
+        vatAmount: parseFloat(cfVat) || 0,
+        category: cfCategory,
+        description: cfDescription || undefined,
+        receiptUrl: pendingAnalysis.analysis.receiptUrl,
+        isDeductible: true,
+      });
+      setReceipts((prev) => [expense, ...prev]);
+      setPendingAnalysis(null);
+    } catch (err) {
+      setAnalyzeError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteReceipt(id: string) {
+    if (!confirm('Supprimer ce justificatif ?')) return;
+    await apiDeleteExpense(tok(), id);
+    setReceipts((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  async function handleDownloadPdf() {
+    setPdfLoading(true);
+    setPdfError(null);
+    try {
+      const res = await fetch(getExpenseReportPdfUrl(from, to), { headers: { Authorization: `Bearer ${tok()}` } });
+      if (!res.ok) { const msg = await res.text().catch(() => `Erreur ${res.status}`); throw new Error(msg || `Erreur ${res.status}`); }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `note-de-frais-${from.slice(0, 7)}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) { setPdfError(e instanceof Error ? e.message : 'Erreur'); }
+    finally { setPdfLoading(false); }
+  }
+
   return (
-    <div className="max-w-lg space-y-6">
-      <div className="rounded-xl border border-[#E5E4E0] bg-white p-6 space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900">Générer une note de frais</h2>
-          <p className="text-sm text-zinc-500 mt-0.5">
-            Exporte toutes vos dépenses sur une période en PDF — idéal pour votre comptable ou votre déclaration fiscale.
-          </p>
-        </div>
+    <div className="space-y-4 max-w-2xl">
+      {/* ── Hidden file input ── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChange}
+      />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-500">Du</label>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+      {/* ── Scan CTA ── */}
+      {!pendingAnalysis && !analyzing && (
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full rounded-2xl border-2 border-dashed flex flex-col items-center gap-3 py-8 px-4 transition-all"
+          style={{ borderColor: '#D0E6F7', background: '#F0F8FF' }}
+        >
+          <div className="h-14 w-14 rounded-2xl flex items-center justify-center" style={{ background: '#E0F0FF' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
           </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-500">Au</label>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+          <div className="text-center">
+            <p className="text-[15px] font-semibold" style={{ color: '#185FA5' }}>Photographier un justificatif</p>
+            <p className="text-[13px] mt-0.5" style={{ color: '#378ADD' }}>Ticket, facture, reçu — l&apos;IA extrait tout automatiquement</p>
           </div>
-        </div>
-
-        <button onClick={handleDownload} disabled={loading || !from || !to}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#378ADD] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-80 transition disabled:opacity-60">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          {loading ? 'Génération…' : 'Télécharger le PDF'}
         </button>
-        {error && (
-          <p className="text-sm text-red-600 rounded-lg bg-red-50 px-3 py-2">{error}</p>
+      )}
+
+      {/* ── Analyzing loader ── */}
+      {analyzing && (
+        <div className="rounded-2xl border flex flex-col items-center gap-3 py-10" style={{ borderColor: '#E5E4E0', background: '#fff' }}>
+          <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ background: '#E0F0FF' }}>
+            <svg className="animate-spin h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="#378ADD">
+              <circle className="opacity-25" cx="12" cy="12" r="10" strokeWidth="3"/>
+              <path className="opacity-75" fill="#378ADD" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          </div>
+          <p className="text-[14px] font-medium" style={{ color: '#185FA5' }}>Analyse en cours…</p>
+          <p className="text-[12px]" style={{ color: '#888780' }}>L&apos;IA lit votre justificatif</p>
+        </div>
+      )}
+
+      {analyzeError && (
+        <div className="rounded-xl px-4 py-3 text-sm flex items-center gap-2" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
+          <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          {analyzeError}
+        </div>
+      )}
+
+      {/* ── Confirmation card ── */}
+      {pendingAnalysis && (
+        <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#E5E4E0', background: '#fff' }}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#F0EFEB', background: '#F8F8F6' }}>
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: '#D0F0E8' }}>
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l2.5 2.5 5.5-5.5" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="text-[13px] font-semibold" style={{ color: '#059669' }}>Justificatif analysé</span>
+            </div>
+            <button onClick={() => { setPendingAnalysis(null); setAnalyzeError(null); }} className="text-zinc-400 hover:text-zinc-600 transition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div className="flex gap-0 sm:gap-4 p-4 flex-col sm:flex-row">
+            {/* Photo */}
+            <div className="flex-shrink-0 mb-4 sm:mb-0">
+              <button onClick={() => setEnlarged(pendingAnalysis.preview)} className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={pendingAnalysis.preview}
+                  alt="Justificatif"
+                  className="rounded-xl object-cover"
+                  style={{ width: '100%', maxWidth: 140, height: 180, objectFit: 'cover', border: '1px solid #E5E4E0' }}
+                />
+              </button>
+              <p className="text-[10px] text-center mt-1" style={{ color: '#B0AFA9' }}>Appuyer pour agrandir</p>
+            </div>
+
+            {/* Fields */}
+            <div className="flex-1 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Fournisseur</label>
+                  <input value={cfSupplier} onChange={(e) => setCfSupplier(e.target.value)}
+                    placeholder="Nom du commerçant"
+                    className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                    style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}/>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Date</label>
+                  <input type="date" value={cfDate} onChange={(e) => setCfDate(e.target.value)}
+                    className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                    style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}/>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Montant TTC (€)</label>
+                  <input type="number" step="0.01" value={cfAmountTTC} onChange={(e) => setCfAmountTTC(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                    style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}/>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>TVA (€)</label>
+                  <input type="number" step="0.01" value={cfVat} onChange={(e) => setCfVat(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                    style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Catégorie</label>
+                <select value={cfCategory} onChange={(e) => setCfCategory(e.target.value as ExpenseCategory)}
+                  className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none appearance-none"
+                  style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}>
+                  {(Object.keys(CAT_LABELS) as ExpenseCategory[]).map((c) => (
+                    <option key={c} value={c}>{CAT_LABELS[c]}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Description</label>
+                <input value={cfDescription} onChange={(e) => setCfDescription(e.target.value)}
+                  placeholder="Ex : Déjeuner client"
+                  className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                  style={{ border: '1px solid #E5E4E0', background: '#F8F8F6', color: '#1a1a18' }}/>
+              </div>
+
+              <button onClick={handleConfirm} disabled={saving}
+                className="w-full rounded-xl py-2.5 text-[13px] font-semibold transition disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #185FA5 0%, #378ADD 100%)', color: '#fff' }}>
+                {saving ? 'Enregistrement…' : 'Sauvegarder la dépense'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Receipts list ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[13px] font-semibold" style={{ color: '#1a1a18' }}>
+            Mes justificatifs {!loadingList && receipts.length > 0 && <span className="font-normal" style={{ color: '#888780' }}>({receipts.length})</span>}
+          </p>
+          {!pendingAnalysis && !analyzing && (
+            <button onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition"
+              style={{ background: '#E6F1FB', color: '#185FA5' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 4v16m8-8H4"/></svg>
+              Ajouter
+            </button>
+          )}
+        </div>
+
+        {loadingList ? (
+          <div className="py-8 text-center text-sm" style={{ color: '#B0AFA9' }}>Chargement…</div>
+        ) : receipts.length === 0 ? (
+          <div className="rounded-xl py-10 flex flex-col items-center gap-2" style={{ background: '#F8F8F6' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D0CFC9" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <p className="text-[13px]" style={{ color: '#B0AFA9' }}>Aucun justificatif pour l&apos;instant</p>
+            <p className="text-[12px]" style={{ color: '#C8C7C1' }}>Photographiez votre premier ticket</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {receipts.map((r) => {
+              const imgUrl = r.receiptUrl?.startsWith('/uploads')
+                ? `${API_BASE}${r.receiptUrl}`
+                : r.receiptUrl ?? '';
+              const catColor = CAT_COLORS[r.category as ExpenseCategory] ?? '#9CA3AF';
+              const catLabel = CAT_LABELS[r.category as ExpenseCategory] ?? r.category;
+              return (
+                <div key={r.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: '#fff', border: '1px solid #F0EFEB' }}>
+                  {/* Thumbnail */}
+                  <button onClick={() => setEnlarged(imgUrl)} className="flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imgUrl} alt="" className="rounded-lg object-cover" style={{ width: 52, height: 52, objectFit: 'cover' }} />
+                  </button>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold truncate" style={{ color: '#1a1a18' }}>
+                        {r.supplier || r.description || 'Justificatif'}
+                      </span>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ background: catColor }}>
+                        {catLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[12px]" style={{ color: '#888780' }}>
+                        {new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-[12px] font-semibold" style={{ color: '#1a1a18' }}>
+                        {eur(r.amount)}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Delete */}
+                  <button onClick={() => handleDeleteReceipt(r.id)}
+                    className="flex-shrink-0 rounded-lg p-1.5 transition"
+                    style={{ color: '#C8C7C1' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#C8C7C1')}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6m5 0V4h4v2"/>
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Shortcuts */}
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Raccourcis</p>
-        {[
-          { label: 'Mois en cours',      from: firstDayOfMonth(),   to: lastDayOfMonth()   },
-          { label: 'Mois précédent',     from: firstDayOfMonth(-1), to: lastDayOfMonth(-1) },
-          { label: 'Trimestre en cours', from: firstDayOfQuarter(), to: lastDayOfQuarter() },
-          { label: 'Année en cours',     from: firstDayOfYear(),    to: lastDayOfYear()    },
-        ].map((s) => (
-          <button key={s.label}
-            onClick={() => { setFrom(s.from); setTo(s.to); }}
-            className="w-full flex items-center justify-between rounded-lg border border-[#E5E4E0] bg-white px-4 py-3 text-sm hover:bg-zinc-50 transition">
-            <span className="font-medium text-zinc-700">{s.label}</span>
-            <span className="text-zinc-400 text-xs">{fmtDate(s.from)} → {fmtDate(s.to)}</span>
-          </button>
-        ))}
+      {/* ── PDF Export (collapsible) ── */}
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E5E4E0' }}>
+        <button onClick={() => setShowExport(!showExport)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition"
+          style={{ background: '#F8F8F6', color: '#555450' }}>
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              <path d="M12 18v-6m-3 3l3 3 3-3"/>
+            </svg>
+            Exporter en PDF
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className={`transition-transform ${showExport ? 'rotate-180' : ''}`}>
+            <path d="M6 9l6 6 6-6" strokeLinecap="round"/>
+          </svg>
+        </button>
+
+        {showExport && (
+          <div className="p-4 space-y-3" style={{ background: '#fff' }}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Du</label>
+                <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none"/>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: '#888780' }}>Au</label>
+                <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-[#378ADD] focus:outline-none"/>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Ce mois', from: firstDayOfMonth(), to: lastDayOfMonth() },
+                { label: 'Mois passé', from: firstDayOfMonth(-1), to: lastDayOfMonth(-1) },
+                { label: 'Ce trimestre', from: firstDayOfQuarter(), to: lastDayOfQuarter() },
+              ].map((s) => (
+                <button key={s.label} onClick={() => { setFrom(s.from); setTo(s.to); }}
+                  className="rounded-lg px-2.5 py-1 text-[12px] font-medium"
+                  style={{ background: '#F0F8FF', color: '#185FA5' }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={handleDownloadPdf} disabled={pdfLoading || !from || !to}
+              className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition disabled:opacity-60"
+              style={{ background: '#378ADD', color: '#fff' }}>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              {pdfLoading ? 'Génération…' : 'Télécharger le PDF'}
+            </button>
+            {pdfError && <p className="text-sm text-red-600 rounded-lg bg-red-50 px-3 py-2">{pdfError}</p>}
+          </div>
+        )}
       </div>
+
+      {/* ── Image enlarger ── */}
+      {enlarged && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setEnlarged(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={enlarged} alt="" className="max-h-[85vh] max-w-full rounded-2xl object-contain" onClick={(e) => e.stopPropagation()}/>
+        </div>
+      )}
     </div>
   );
 }

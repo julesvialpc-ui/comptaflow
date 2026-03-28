@@ -37,6 +37,12 @@ export class EmployeesController {
     return this.employeesService.findOne(id, user.businessId);
   }
 
+  @Get(':id/expenses')
+  getExpenses(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    if (!user.businessId) throw new ForbiddenException('No business associated');
+    return this.employeesService.getExpenses(id, user.businessId);
+  }
+
   @Post()
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthUser) {
     if (!user.businessId) throw new ForbiddenException('No business associated');

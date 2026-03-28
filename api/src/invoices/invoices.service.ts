@@ -24,10 +24,18 @@ export class InvoicesService {
 
   // ── List ──────────────────────────────────────────────────────────────────
 
-  findAll(
+  async findAll(
     businessId: string,
     filters: { status?: InvoiceStatus; clientId?: string; from?: Date; to?: Date } = {},
   ) {
+    // Auto-transition SENT invoices with passed due date to OVERDUE
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    await this.prisma.invoice.updateMany({
+      where: { businessId, status: 'SENT', dueDate: { lt: today } },
+      data: { status: 'OVERDUE' },
+    });
+
     return this.prisma.invoice.findMany({
       where: {
         businessId,

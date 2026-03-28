@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import { $Enums } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatService } from './chat.service';
 import { AI_CHAT_TOOLS } from './ai-chat.tools';
@@ -181,6 +182,14 @@ export class AiChatService {
           return this.getTaxDeadlines(businessId);
         case 'get_unpaid_invoices_total':
           return this.getUnpaidInvoicesTotal(businessId);
+        case 'get_clients_summary':
+          return this.getClientsSummary(businessId, input.top as number);
+        case 'get_employees_summary':
+          return this.getEmployeesSummary(businessId);
+        case 'get_revenue_goal_progress':
+          return this.getRevenueGoalProgress(businessId);
+        case 'create_expense':
+          return this.createExpense(businessId, input);
         default:
           return JSON.stringify({ error: `Outil inconnu: ${name}` });
       }
@@ -310,6 +319,129 @@ export class AiChatService {
       count: unpaid.length,
       overdue_count: overdue.length,
       overdue_amount: overdue.reduce((sum, i) => sum + i.total, 0).toFixed(2),
+    });
+  }
+
+  private async getClientsSummary(businessId: string, top = 5): Promise<string> {
+    const [clients, quotes] = await Promise.all([
+      this.prisma.invoice.groupBy({
+        by: ['clientId'],
+        where: { businessId, status: 'PAID' },
+        _sum: { total: true },
+        _count: { id: true },
+        orderBy: { _sum: { total: 'desc' } },
+        take: Math.min(top || 5, 20),
+      }),
+      this.prisma.quote.count({
+        where: { businessId, status: { in: ['DRAFT', 'SENT'] } },
+      }),
+    ]);
+
+    const clientIds = clients.map((c) => c.clientId).filter(Boolean) as string[];
+    const clientNames = await this.prisma.client.findMany({
+      where: { id: { in: clientIds } },
+      select: { id: true, name: true },
+    });
+    const nameMap = Object.fromEntries(clientNames.map((c) => [c.id, c.name]));
+
+    return JSON.stringify({
+      top_clients: clients.map((c) => ({
+        name: nameMap[c.clientId ?? ''] ?? 'Client inconnu',
+        total_revenue: (c._sum.total ?? 0).toFixed(2),
+        invoice_count: c._count.id,
+      })),
+      pending_quotes: quotes,
+    });
+  }
+
+  private async getEmployeesSummary(businessId: string): Promise<string> {
+    const [employees, recentExpenses] = await Promise.all([
+      this.prisma.employee.findMany({
+        where: { businessId },
+        select: { firstName: true, lastName: true, position: true, contractType: true, grossSalary: true, isActive: true },
+      }),
+      this.prisma.expense.findMany({
+        where: { businessId, employeeId: { not: null } },
+        include: { employee: { select: { firstName: true, lastName: true } } },
+        orderBy: { date: 'desc' },
+        take: 5,
+      }),
+    ]);
+
+    const active = employees.filter((e) => e.isActive);
+    const monthlySalaryBurden = active.reduce((sum, e) => sum + e.grossSalary * 1.45, 0);
+
+    return JSON.stringify({
+      total: employees.length,
+      active: active.length,
+      monthly_gross_salary: active.reduce((sum, e) => sum + e.grossSalary, 0).toFixed(2),
+      monthly_total_cost_estimate: monthlySalaryBurden.toFixed(2),
+      employees: active.map((e) => ({
+        name: `${e.firstName} ${e.lastName}`,
+        position: e.position,
+        contract: e.contractType,
+        gross_salary: e.grossSalary.toFixed(2),
+      })),
+      recent_expense_reports: recentExpenses.map((e) => ({
+        employee: e.employee ? `${e.employee.firstName} ${e.employee.lastName}` : 'Inconnu',
+        description: e.description,
+        amount: e.amount.toFixed(2),
+        date: e.date.toISOString().split('T')[0],
+      })),
+    });
+  }
+
+  private async getRevenueGoalProgress(businessId: string): Promise<string> {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { revenueGoal: true, type: true, activityType: true },
+    });
+
+    const year = new Date().getFullYear();
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31, 23, 59, 59);
+
+    const paid = await this.prisma.invoice.aggregate({
+      where: { businessId, status: 'PAID', paidAt: { gte: start, lte: end } },
+      _sum: { total: true },
+    });
+
+    const ytdRevenue = paid._sum.total ?? 0;
+    const goal = business?.revenueGoal ?? null;
+
+    // Micro-enterprise thresholds 2024
+    const isServices = business?.activityType?.includes('BIC_SERVICES') || business?.activityType?.includes('BNC');
+    const threshold = isServices ? 77700 : 188700;
+
+    return JSON.stringify({
+      ytd_revenue: ytdRevenue.toFixed(2),
+      annual_goal: goal?.toFixed(2) ?? null,
+      goal_progress_pct: goal ? ((ytdRevenue / goal) * 100).toFixed(1) : null,
+      threshold_limit: threshold,
+      threshold_progress_pct: ((ytdRevenue / threshold) * 100).toFixed(1),
+      threshold_remaining: (threshold - ytdRevenue).toFixed(2),
+      alert: ytdRevenue > threshold * 0.9 ? 'ATTENTION : vous approchez du seuil du régime micro !' : null,
+    });
+  }
+
+  private async createExpense(businessId: string, input: Record<string, unknown>): Promise<string> {
+    const expense = await this.prisma.expense.create({
+      data: {
+        businessId,
+        description: input.description as string,
+        amount: input.amount as number,
+        vatAmount: 0,
+        category: ((input.category as string) ?? 'OTHER') as $Enums.ExpenseCategory,
+        supplier: (input.supplier as string) ?? null,
+        date: input.date ? new Date(input.date as string) : new Date(),
+        isDeductible: true,
+      },
+    });
+
+    return JSON.stringify({
+      success: true,
+      id: expense.id,
+      message: `Dépense "${expense.description}" de ${(expense.amount).toFixed(2)} € créée avec succès.`,
     });
   }
 

@@ -11,6 +11,18 @@ export const shortMonth = (key: string) => {
   });
 };
 
+export function exportCsv(filename: string, rows: string[][]): void {
+  const bom = '\uFEFF'; // BOM UTF-8 pour Excel
+  const csv = bom + rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Brouillon',
   SENT: 'Envoyée',

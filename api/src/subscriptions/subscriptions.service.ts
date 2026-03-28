@@ -58,10 +58,14 @@ export class SubscriptionsService {
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
+      payment_method_collection: 'always',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${frontendUrl}/subscription/success`,
       cancel_url: `${frontendUrl}/subscription/cancel`,
-      subscription_data: { metadata: { userId, plan } },
+      subscription_data: {
+        trial_period_days: 14,
+        metadata: { userId, plan },
+      },
       locale: 'fr',
       allow_promotion_codes: true,
     });
@@ -107,15 +111,19 @@ export class SubscriptionsService {
     const stripeSub = await this.stripe.subscriptions.retrieve(stripeSubId);
     const priceId = stripeSub.items.data[0]?.price.id;
     const plan = this.planFromPriceId(priceId);
-    console.log('[Webhook] checkout.session.completed', { customerId, stripeSubId, priceId, plan });
+    const isTrialing = stripeSub.status === 'trialing';
+    const trialEnd = stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null;
+    console.log('[Webhook] checkout.session.completed', { customerId, stripeSubId, priceId, plan, isTrialing });
     const result = await this.prisma.subscription.updateMany({
       where: { stripeCustomerId: customerId },
       data: {
-        plan, status: 'ACTIVE',
+        plan,
+        status: isTrialing ? 'TRIALING' : 'ACTIVE',
         stripeSubscriptionId: stripeSubId, stripePriceId: priceId,
         currentPeriodStart: new Date((stripeSub.items.data[0]?.current_period_start ?? stripeSub.start_date) * 1000),
         currentPeriodEnd: new Date((stripeSub.items.data[0]?.current_period_end ?? stripeSub.start_date + 2592000) * 1000),
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
+        trialEndsAt: trialEnd,
       },
     });
     console.log('[Webhook] updateMany result:', result);
@@ -147,14 +155,21 @@ export class SubscriptionsService {
   private async handleSubscriptionUpdated(stripeSub: Stripe.Subscription) {
     const priceId = stripeSub.items.data[0]?.price.id;
     const plan = this.planFromPriceId(priceId);
+    const trialEnd = stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null;
+    let status: 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELLED';
+    if (stripeSub.status === 'trialing') status = 'TRIALING';
+    else if (stripeSub.status === 'active') status = 'ACTIVE';
+    else if (stripeSub.status === 'canceled') status = 'CANCELLED';
+    else status = 'PAST_DUE';
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: stripeSub.id },
       data: {
         plan, stripePriceId: priceId,
-        status: stripeSub.status === 'active' ? 'ACTIVE' : 'PAST_DUE',
+        status,
         currentPeriodStart: new Date((stripeSub.items.data[0]?.current_period_start ?? stripeSub.start_date) * 1000),
         currentPeriodEnd: new Date((stripeSub.items.data[0]?.current_period_end ?? stripeSub.start_date + 2592000) * 1000),
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
+        trialEndsAt: trialEnd,
       },
     });
   }

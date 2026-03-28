@@ -20,4 +20,7 @@ export class UpdateBusinessDto {
   isVatSubject?: boolean;
   defaultVatRate?: number;
   hasEmployees?: boolean;
+  rgeNumber?: string;
+  decennialInsuranceRef?: string;
+  kbisNumber?: string;
 }

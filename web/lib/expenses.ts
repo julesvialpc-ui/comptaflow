@@ -22,10 +22,12 @@ export interface ExpensePayload {
   description?: string;
   date?: string;
   supplier?: string;
+  receiptUrl?: string;
   isDeductible?: boolean;
   isRecurring?: boolean;
   recurrenceInterval?: RecurrenceInterval | null;
   userCategoryId?: string | null;
+  employeeId?: string | null;
 }
 
 export async function apiGetExpenses(token: string, filters: ExpenseFilters = {}): Promise<Expense[]> {
@@ -89,4 +91,26 @@ export async function apiDeleteExpense(token: string, id: string): Promise<void>
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(await res.text());
+}
+
+export interface ReceiptAnalysis {
+  receiptUrl: string;
+  supplier?: string;
+  date?: string;
+  amountTTC?: number;
+  vatAmount?: number;
+  category?: ExpenseCategory;
+  description?: string;
+}
+
+export async function apiAnalyzeReceipt(token: string, file: File): Promise<ReceiptAnalysis> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await authFetch(`${API}/expenses/analyze-receipt`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }

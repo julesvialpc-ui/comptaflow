@@ -22,6 +22,7 @@ import { CategoryBudgetsModule } from './category-budgets/category-budgets.modul
 import { TimeEntriesModule } from './time-entries/time-entries.module';
 import { PlanLimitsModule } from './plan-limits/plan-limits.module';
 import { EmployeesModule } from './employees/employees.module';
+import { DocumentsModule } from './documents/documents.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -46,6 +47,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     TimeEntriesModule,
     PlanLimitsModule,
     EmployeesModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [
