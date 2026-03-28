@@ -503,66 +503,67 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   );
 }
 
-// ─── Quick Add Button ─────────────────────────────────────────────────────────
+// ─── Quick Add Actions (shared data) ─────────────────────────────────────────
 
-function QuickAddButton({ onNavClick }: { onNavClick?: () => void }) {
+const QUICK_ADD_ACTIONS = [
+  {
+    href: '/invoices/new',
+    label: 'Nouvelle facture',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    href: '/quotes',
+    label: 'Nouveau devis',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    href: '/expenses',
+    label: 'Nouvelle dépense',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    href: '/revenues',
+    label: 'Nouveau revenu',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+];
+
+// ─── Quick Add Button (desktop only) ─────────────────────────────────────────
+
+function QuickAddButton() {
   const [open, setOpen] = useState(false);
 
-  const actions = [
-    {
-      href: '/invoices/new',
-      label: 'Nouvelle facture',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
-          <line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
-          <line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
-        </svg>
-      ),
-    },
-    {
-      href: '/quotes/new',
-      label: 'Nouveau devis',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
-    },
-    {
-      href: '/expenses',
-      label: 'Nouvelle dépense',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-          <line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2" />
-        </svg>
-      ),
-    },
-    {
-      href: '/revenues',
-      label: 'Nouveau revenu',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
-      {/* Actions */}
+    <div className="hidden lg:flex fixed bottom-6 right-6 z-40 flex-col items-end gap-2">
       {open && (
         <>
           <div className="fixed inset-0" onClick={() => setOpen(false)} />
           <div className="relative flex flex-col items-end gap-1.5 mb-1">
-            {actions.map((a) => (
+            {QUICK_ADD_ACTIONS.map((a) => (
               <Link
                 key={a.href}
                 href={a.href}
-                onClick={() => { setOpen(false); onNavClick?.(); }}
+                onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-[13px] font-medium shadow-lg transition-transform hover:scale-105"
                 style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
               >
@@ -573,7 +574,6 @@ function QuickAddButton({ onNavClick }: { onNavClick?: () => void }) {
           </div>
         </>
       )}
-      {/* Toggle */}
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all"
@@ -581,14 +581,213 @@ function QuickAddButton({ onNavClick }: { onNavClick?: () => void }) {
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#14508a'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#185FA5'; }}
       >
-        <svg
-          width="20" height="20" viewBox="0 0 20 20" fill="none"
-          style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-        >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+          style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
           <path d="M10 4v12M4 10h12" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
     </div>
+  );
+}
+
+// ─── Mobile More Sheet ────────────────────────────────────────────────────────
+
+function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const { theme, toggle: toggleTheme } = useTheme();
+  const plan = getActivePlan(user);
+  const [hasEmployees, setHasEmployees] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  useEffect(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (!t) return;
+    apiGetBusiness(t).then((b) => { if (b?.hasEmployees) setHasEmployees(true); }).catch(() => {});
+  }, []);
+
+  const secondaryNav = [
+    { href: '/quotes', label: 'Devis', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { href: '/revenues', label: 'Revenus', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg> },
+    { href: '/expenses', label: 'Dépenses', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2"/></svg> },
+    { href: '/time-tracking', label: 'Temps', pro: true, icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { href: '/tax-reports', label: 'Rapports fiscaux', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M2 13 L6 7 L10 10 L14 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { href: '/chat', label: 'Assistant IA', pro: plan === 'FREE', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M5 14l1.5-2h3L11 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5" cy="7" r="1" fill="currentColor"/><circle cx="8" cy="7" r="1" fill="currentColor"/><circle cx="11" cy="7" r="1" fill="currentColor"/></svg> },
+    ...(hasEmployees ? [{ href: '/employees', label: 'Mes employés', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><circle cx="10.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 13c0-2.21 2.015-4 4.5-4s4.5 1.79 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M11 9.2c1.5.4 2.7 1.8 2.7 3.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }] : []),
+    { href: '/settings', label: 'Paramètres', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+  ];
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white bottom-nav-safe"
+        style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.12)' }}>
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+        </div>
+
+        {/* Nav grid */}
+        <div className="px-4 pb-2 grid grid-cols-4 gap-1">
+          {secondaryNav.map((item) => {
+            const active = isActive(item.href, pathname);
+            return (
+              <Link key={item.href} href={item.href} onClick={onClose}
+                className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-colors"
+                style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
+              >
+                <span>{item.icon}</span>
+                <span className="text-[10px] font-medium text-center leading-tight">{item.label}</span>
+                {(item as any).pro && (
+                  <span className="rounded-full px-1 py-0 text-[8px] font-bold" style={{ background: '#E6F1FB', color: '#185FA5' }}>PRO</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Divider */}
+        <div className="mx-4 border-t border-[#E5E4E0]" />
+
+        {/* User + actions */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-semibold text-white"
+            style={{ background: '#378ADD' }}>
+            {user ? initials(user.name, user.email) : '?'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium" style={{ color: '#1a1a18' }}>{user?.name ?? user?.email ?? 'Utilisateur'}</p>
+            {user?.name && <p className="truncate text-[11px]" style={{ color: '#888780' }}>{user.email}</p>}
+          </div>
+          <button onClick={toggleTheme} className="rounded-lg p-2 transition-colors" style={{ color: '#888780', background: '#F5F5F3' }} title={theme === 'light' ? 'Mode sombre' : 'Mode clair'}>
+            {theme === 'light' ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+            )}
+          </button>
+          <button onClick={() => { logout(); onClose(); }} className="rounded-lg p-2 transition-colors" style={{ color: '#888780', background: '#F5F5F3' }} title="Déconnexion">
+            <svg width="16" height="16" viewBox="0 0 15 15" fill="none">
+              <path d="M10 10l3-3m0 0l-3-3m3 3H5m3 4v1a2.5 2.5 0 01-2.5 2.5H4A2.5 2.5 0 011.5 11.5v-8A2.5 2.5 0 014 1h1.5A2.5 2.5 0 018 3.5v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {plan === 'FREE' && (
+          <div className="mx-4 mb-3 rounded-xl px-4 py-3 flex items-center justify-between" style={{ background: '#F0F7FF', border: '0.5px solid #C8DCF2' }}>
+            <div>
+              <p className="text-[12px] font-medium" style={{ color: '#185FA5' }}>Plan Gratuit</p>
+              <p className="text-[11px]" style={{ color: '#378ADD' }}>Passez au Pro pour tout débloquer</p>
+            </div>
+            <button onClick={() => { setShowUpgrade(true); onClose(); }}
+              className="rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white"
+              style={{ background: '#185FA5' }}>
+              Pro ✦
+            </button>
+          </div>
+        )}
+        <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      </div>
+    </>
+  );
+}
+
+// ─── Mobile Bottom Nav ────────────────────────────────────────────────────────
+
+function MobileBottomNav({ onMoreClick, onAddClick }: { onMoreClick: () => void; onAddClick: () => void }) {
+  const pathname = usePathname();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bottom-nav-safe"
+      style={{ background: '#FFFFFF', borderTop: '0.5px solid #E5E4E0', boxShadow: '0 -2px 12px rgba(0,0,0,0.06)' }}>
+      <div className="flex h-14 items-center">
+
+        {/* Dashboard */}
+        <Link href="/dashboard" className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
+          style={{ color: isActive('/dashboard', pathname) ? '#185FA5' : '#888780' }}>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity={isActive('/dashboard', pathname) ? '1' : '0.5'} />
+            <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity={isActive('/dashboard', pathname) ? '1' : '0.5'} />
+            <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity={isActive('/dashboard', pathname) ? '1' : '0.5'} />
+            <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity={isActive('/dashboard', pathname) ? '1' : '0.5'} />
+          </svg>
+          <span className="text-[9px] font-medium">Accueil</span>
+        </Link>
+
+        {/* Factures */}
+        <Link href="/invoices" className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
+          style={{ color: isActive('/invoices', pathname) ? '#185FA5' : '#888780' }}>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth={isActive('/invoices', pathname) ? '1.6' : '1.2'} />
+            <line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
+          </svg>
+          <span className="text-[9px] font-medium">Factures</span>
+        </Link>
+
+        {/* Center + button */}
+        <div className="flex flex-1 items-center justify-center">
+          <button onClick={onAddClick}
+            className="flex h-12 w-12 -mt-5 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+            style={{ background: '#185FA5' }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4v12M4 10h12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Clients */}
+        <Link href="/clients" className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
+          style={{ color: isActive('/clients', pathname) ? '#185FA5' : '#888780' }}>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth={isActive('/clients', pathname) ? '1.6' : '1.2'} />
+            <path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth={isActive('/clients', pathname) ? '1.6' : '1.2'} strokeLinecap="round" />
+          </svg>
+          <span className="text-[9px] font-medium">Clients</span>
+        </Link>
+
+        {/* More */}
+        <button onClick={onMoreClick} className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
+          style={{ color: '#888780' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="5" r="1.2" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+            <circle cx="12" cy="19" r="1.2" fill="currentColor" />
+          </svg>
+          <span className="text-[9px] font-medium">Plus</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ─── Mobile Quick Add Sheet ───────────────────────────────────────────────────
+
+function MobileQuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white bottom-nav-safe px-4 pb-2"
+        style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.12)' }}>
+        <div className="flex justify-center pt-3 pb-4">
+          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+        </div>
+        <p className="text-[12px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888780' }}>Créer</p>
+        <div className="grid grid-cols-2 gap-2 pb-3">
+          {QUICK_ADD_ACTIONS.map((a) => (
+            <Link key={a.href} href={a.href} onClick={onClose}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors active:scale-95"
+              style={{ background: '#F5F5F3', color: '#1a1a18' }}>
+              <span style={{ color: '#378ADD' }}>{a.icon}</span>
+              <span className="text-[13px] font-medium">{a.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -597,10 +796,10 @@ function QuickAddButton({ onNavClick }: { onNavClick?: () => void }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
-  // Raccourcis clavier globaux
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true); }
@@ -615,7 +814,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const pathname = usePathname();
-  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+  useEffect(() => { setMoreSheetOpen(false); setQuickAddOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -638,57 +837,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen" style={{ background: '#F5F5F3' }}>
       {/* Desktop sidebar */}
-      <aside
-        className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-52 lg:flex-col"
-        style={{ background: '#FFFFFF', borderRight: '0.5px solid #E5E4E0' }}
-      >
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-52 lg:flex-col"
+        style={{ background: '#FFFFFF', borderRight: '0.5px solid #E5E4E0' }}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0"
-            style={{ background: 'rgba(0,0,0,0.3)' }}
-            onClick={() => setDrawerOpen(false)}
-          />
-          <aside
-            className="absolute inset-y-0 left-0 w-52"
-            style={{ background: '#FFFFFF', borderRight: '0.5px solid #E5E4E0' }}
-          >
-            <SidebarContent onNavClick={() => setDrawerOpen(false)} />
-          </aside>
-        </div>
-      )}
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex h-12 items-center justify-between px-4"
+        style={{ background: '#FFFFFF', borderBottom: '0.5px solid #E5E4E0' }}>
+        <Link href="/dashboard" className="text-[18px] font-medium tracking-tight">
+          <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
+        </Link>
+        <button onClick={() => window.dispatchEvent(new CustomEvent('open-search'))}
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[12px]"
+          style={{ background: '#F5F5F3', border: '0.5px solid #E5E4E0', color: '#888780' }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          Rechercher…
+        </button>
+      </div>
 
       {/* Main content */}
       <div className="flex-1 lg:pl-52">
-        {/* Mobile top bar */}
-        <div
-          className="sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:hidden"
-          style={{ background: '#FFFFFF', borderBottom: '0.5px solid #E5E4E0' }}
-        >
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="rounded-md p-2 transition-colors"
-            style={{ color: '#888780' }}
-            aria-label="Ouvrir le menu"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <span className="text-[17px] font-medium tracking-tight">
-            <span style={{ color: '#185FA5' }}>Ko</span><span style={{ color: '#378ADD' }}>nta</span>
-          </span>
-          <div className="w-9" />
-        </div>
-
-        <main>{children}</main>
+        <main className="pt-12 pb-20 lg:pt-0 lg:pb-0">{children}</main>
       </div>
 
+      {/* Mobile bottom nav */}
+      <MobileBottomNav
+        onMoreClick={() => setMoreSheetOpen(true)}
+        onAddClick={() => setQuickAddOpen(true)}
+      />
+
+      {/* Mobile sheets */}
+      <MobileMoreSheet open={moreSheetOpen} onClose={() => setMoreSheetOpen(false)} />
+      <MobileQuickAddSheet open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
+
+      {/* Desktop FAB */}
       <QuickAddButton />
+
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );

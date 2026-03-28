@@ -107,7 +107,7 @@ export default function ClientsPage() {
   const atClientLimit = plan === 'FREE' && usage?.limits && usage.usage.clientsTotal >= usage.limits.clientsTotal;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <UpgradeModal
         isOpen={showUpgrade}
         onClose={() => setShowUpgrade(false)}
@@ -115,8 +115,8 @@ export default function ClientsPage() {
         description={`Vous avez atteint la limite de ${usage?.limits?.clientsTotal ?? 10} clients. Passez au plan Pro pour des clients illimités.`}
       />
       {/* Header */}
-      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="border-b border-[#E5E4E0] bg-white px-4 py-4 -mx-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Clients</h1>
             <p className="text-sm text-zinc-500">
@@ -154,10 +154,10 @@ export default function ClientsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6 space-y-4">
+      <main className="space-y-4">
         {/* Toolbar */}
         <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative flex-1 sm:max-w-xs">
             <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
               fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -189,9 +189,67 @@ export default function ClientsPage() {
           )}
         </div>
 
-        {/* List */}
+        {/* Mobile card list */}
+        <div className="sm:hidden space-y-2">
+          {loading ? (
+            <SkeletonList rows={4} />
+          ) : displayed.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12 gap-4" style={{ borderColor: '#E5E4E0', background: '#FFFFFF' }}>
+              <p className="text-sm text-zinc-400">{search ? 'Aucun client ne correspond à la recherche' : 'Aucun client pour l\'instant'}</p>
+              {!search && (
+                <Link href="/clients/new" className="rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: '#185FA5' }}>
+                  Ajouter un client
+                </Link>
+              )}
+            </div>
+          ) : (
+            displayed.map((client) => (
+              <div key={client.id} className={`rounded-xl overflow-hidden ${!client.isActive ? 'opacity-60' : ''}`} style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+                <Link href={`/clients/${client.id}`} className="flex items-center gap-3 px-4 py-3">
+                  <Avatar name={client.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-zinc-900 truncate">{client.name}</p>
+                      <span className={`inline-flex rounded-full px-2 py-0 text-[10px] font-medium ${client.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'}`}>
+                        {client.isActive ? 'Actif' : 'Archivé'}
+                      </span>
+                    </div>
+                    {client.email && <p className="text-xs text-zinc-400 truncate">{client.email}</p>}
+                    <p className="text-xs text-zinc-400">
+                      {[client.city, client.postalCode].filter(Boolean).join(' ')}
+                      {client._count.invoices > 0 && ` · ${client._count.invoices} facture${client._count.invoices > 1 ? 's' : ''}`}
+                    </p>
+                  </div>
+                  <svg className="h-4 w-4 flex-shrink-0 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <div className="flex border-t border-zinc-100">
+                  <Link href={`/clients/${client.id}/edit`}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-zinc-500 active:bg-zinc-50"
+                    style={{ borderRight: '0.5px solid #F0F0EE' }}>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Modifier
+                  </Link>
+                  <button onClick={() => handleToggle(client.id)} disabled={actionId === client.id}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-zinc-500 active:bg-zinc-50 disabled:opacity-40"
+                    style={{ borderRight: '0.5px solid #F0F0EE' }}>
+                    {client.isActive ? 'Archiver' : 'Réactiver'}
+                  </button>
+                  <button onClick={() => handleDelete(client.id, client.name)} disabled={actionId === client.id}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium active:bg-zinc-50 disabled:opacity-40"
+                    style={{ color: '#DC2626' }}>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop list / table */}
         {loading ? (
-          <SkeletonList rows={5} />
+          <div className="hidden sm:block"><SkeletonList rows={5} /></div>
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 py-24 gap-3">
             <svg className="h-10 w-10 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +266,7 @@ export default function ClientsPage() {
             )}
           </div>
         ) : (
-          <div className="rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
+          <div className="hidden sm:block rounded-xl border border-[#E5E4E0] bg-white overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50">

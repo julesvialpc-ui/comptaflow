@@ -404,7 +404,7 @@ export default function QuotesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Total devis', value: String(totalQuotes), sub: 'tous statuts' },
           { label: 'En attente', value: String(pending), sub: 'brouillons + envoyés' },
@@ -420,6 +420,7 @@ export default function QuotesPage() {
       </div>
 
       {/* Tabs */}
+      <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
       <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
         {TABS.map(t => (
           <button
@@ -432,9 +433,10 @@ export default function QuotesPage() {
           </button>
         ))}
       </div>
+      </div>
 
       {/* Search */}
-      <div className="relative w-64">
+      <div className="relative w-full sm:w-64">
         <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: '#888780' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z" />
         </svg>
@@ -450,8 +452,65 @@ export default function QuotesPage() {
         />
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-2">
+        {loading ? (
+          <SkeletonList rows={4} />
+        ) : quotes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12 gap-4" style={{ borderColor: '#E5E4E0', background: '#FFFFFF' }}>
+            <p className="text-[13px]" style={{ color: '#888780' }}>Aucun devis pour le moment</p>
+            <button onClick={() => setSlider({ mode: 'create' })} className="rounded-lg px-4 py-2 text-[13px] font-medium text-white" style={{ background: '#185FA5' }}>
+              Créer un devis
+            </button>
+          </div>
+        ) : (
+          quotes.map((q) => (
+            <div key={q.id} className="rounded-xl overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+              <div className="px-4 pt-3 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-mono text-[11px]" style={{ color: '#888780' }}>{q.number}</span>
+                  <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    style={{ background: STATUS_BG[q.status], color: STATUS_TEXT[q.status] }}>{STATUS_LABEL[q.status]}</span>
+                </div>
+                <p className="mt-0.5 text-[15px] font-semibold" style={{ color: '#1a1a18' }}>
+                  {q.client?.name ?? <span className="italic font-normal" style={{ color: '#888780' }}>Sans client</span>}
+                </p>
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="text-[11px]" style={{ color: '#888780' }}>
+                    {fmtDate(q.issueDate)}{q.expiryDate ? ` · expire ${fmtDate(q.expiryDate)}` : ''}
+                  </span>
+                  <span className="text-[15px] font-bold" style={{ color: '#185FA5' }}>{eur(q.total)}</span>
+                </div>
+              </div>
+              <div className="flex border-t" style={{ borderColor: '#F0F0EE' }}>
+                <button onClick={() => setSlider({ mode: 'edit', quote: q })}
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-medium active:bg-zinc-50"
+                  style={{ color: '#378ADD', borderRight: '0.5px solid #F0F0EE' }}>
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  Modifier
+                </button>
+                {q.status === 'ACCEPTED' && !q.convertedInvoiceId && (
+                  <button onClick={() => handleConvert(q.id)} disabled={converting === q.id}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-medium active:bg-zinc-50 disabled:opacity-40"
+                    style={{ color: '#185FA5', borderRight: '0.5px solid #F0F0EE' }}>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    Facture
+                  </button>
+                )}
+                <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-medium active:bg-zinc-50 disabled:opacity-40"
+                  style={{ color: '#DC2626' }}>
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block rounded-lg overflow-hidden" style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
         {loading ? (
           <div className="p-4"><SkeletonList rows={5} /></div>
         ) : quotes.length === 0 ? (
@@ -584,7 +643,7 @@ export default function QuotesPage() {
 
       {/* Slide-over panel */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[460px] bg-white shadow-2xl transform transition-transform duration-200 ease-out ${
           slider ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
