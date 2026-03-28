@@ -42,7 +42,7 @@ html.dark {
 
 html.dark body {
   /* invert(1)+hue-rotate: preserve colors; contrast(0.8): lift blacks to ~#1C1C1E (Apple-style) */
-  filter: invert(1) hue-rotate(180deg) contrast(0.68);
+  filter: invert(1) hue-rotate(180deg) contrast(0.58);
 }
 
 /* Re-invert media & charts so they display correctly */
