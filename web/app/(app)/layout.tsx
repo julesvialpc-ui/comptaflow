@@ -719,15 +719,17 @@ function MobileBottomNav({ onMoreClick, onAddClick }: { onMoreClick: () => void;
           <span className="text-[9px] font-medium">Accueil</span>
         </Link>
 
-        {/* Factures */}
-        <Link href="/invoices" className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
-          style={{ color: isActive('/invoices', pathname) ? '#185FA5' : '#888780' }}>
+        {/* Assistant IA */}
+        <Link href="/chat" className="flex flex-1 flex-col items-center justify-center gap-0.5 h-full transition-colors"
+          style={{ color: isActive('/chat', pathname) ? '#185FA5' : '#888780' }}>
           <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth={isActive('/invoices', pathname) ? '1.6' : '1.2'} />
-            <line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
-            <line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="1" y="2" width="14" height="10" rx="2" stroke="currentColor" strokeWidth={isActive('/chat', pathname) ? '1.6' : '1.2'} />
+            <path d="M5 14l1.5-2h3L11 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="5" cy="7" r="1" fill="currentColor" />
+            <circle cx="8" cy="7" r="1" fill="currentColor" />
+            <circle cx="11" cy="7" r="1" fill="currentColor" />
           </svg>
-          <span className="text-[9px] font-medium">Factures</span>
+          <span className="text-[9px] font-medium">Assistant</span>
         </Link>
 
         {/* Center + button */}
