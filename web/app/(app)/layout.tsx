@@ -629,19 +629,22 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
           <div className="h-1 w-10 rounded-full bg-zinc-200" />
         </div>
 
-        {/* Nav grid */}
-        <div className="px-4 pb-2 grid grid-cols-4 gap-1">
+        {/* Nav list */}
+        <div className="px-3 pb-2">
           {secondaryNav.map((item) => {
             const active = isActive(item.href, pathname);
             return (
               <Link key={item.href} href={item.href} onClick={onClose}
-                className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-colors"
-                style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
+                className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors"
+                style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#1a1a18' }}
               >
-                <span>{item.icon}</span>
-                <span className="text-[10px] font-medium text-center leading-tight">{item.label}</span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: active ? '#C8DCF2' : '#F5F5F3', color: active ? '#185FA5' : '#6B6868' }}>
+                  {item.icon}
+                </span>
+                <span className="text-[15px] font-medium flex-1">{item.label}</span>
                 {(item as any).pro && (
-                  <span className="rounded-full px-1 py-0 text-[8px] font-bold" style={{ background: '#E6F1FB', color: '#185FA5' }}>PRO</span>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: '#E6F1FB', color: '#185FA5' }}>PRO</span>
                 )}
               </Link>
             );
@@ -775,14 +778,16 @@ function MobileQuickAddSheet({ open, onClose }: { open: boolean; onClose: () => 
         <div className="flex justify-center pt-3 pb-4">
           <div className="h-1 w-10 rounded-full bg-zinc-200" />
         </div>
-        <p className="text-[12px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#888780' }}>Créer</p>
-        <div className="grid grid-cols-2 gap-2 pb-3">
+        <p className="px-1 text-[12px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#888780' }}>Créer</p>
+        <div className="flex flex-col pb-3">
           {QUICK_ADD_ACTIONS.map((a) => (
             <Link key={a.href} href={a.href} onClick={onClose}
-              className="flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors active:scale-95"
-              style={{ background: '#F5F5F3', color: '#1a1a18' }}>
-              <span style={{ color: '#378ADD' }}>{a.icon}</span>
-              <span className="text-[13px] font-medium">{a.label}</span>
+              className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors active:bg-zinc-50"
+              style={{ color: '#1a1a18' }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: '#F5F5F3', color: '#378ADD' }}>
+                {a.icon}
+              </span>
+              <span className="text-[15px] font-medium">{a.label}</span>
             </Link>
           ))}
         </div>

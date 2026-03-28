@@ -11,6 +11,7 @@ import { apiGetUsage, PlanUsage } from '@/lib/subscriptions';
 import UpgradeModal from '@/components/UpgradeModal';
 import { SkeletonList } from '@/components/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
+import { MobileActionSheet } from '@/components/MobileActionSheet';
 
 function token() {
   return typeof window !== 'undefined' ? (localStorage.getItem('accessToken') ?? '') : '';
@@ -50,6 +51,7 @@ export default function ClientsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [usage, setUsage] = useState<PlanUsage | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [actionMenuClient, setActionMenuClient] = useState<ClientWithStats | null>(null);
   const { toast } = useToast();
 
   // Debounce search
@@ -204,46 +206,68 @@ export default function ClientsPage() {
             </div>
           ) : (
             displayed.map((client) => (
-              <div key={client.id} className={`rounded-xl overflow-hidden ${!client.isActive ? 'opacity-60' : ''}`} style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
-                <Link href={`/clients/${client.id}`} className="flex items-center gap-3 px-4 py-3">
+              <div key={client.id} className={`rounded-2xl overflow-hidden ${!client.isActive ? 'opacity-60' : ''}`} style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0' }}>
+                <Link href={`/clients/${client.id}`} className="flex items-center gap-3 px-5 py-4">
                   <Avatar name={client.name} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-zinc-900 truncate">{client.name}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[16px] font-semibold truncate" style={{ color: '#1a1a18' }}>{client.name}</p>
                       <span className={`inline-flex rounded-full px-2 py-0 text-[10px] font-medium ${client.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'}`}>
                         {client.isActive ? 'Actif' : 'Archivé'}
                       </span>
                     </div>
-                    {client.email && <p className="text-xs text-zinc-400 truncate">{client.email}</p>}
-                    <p className="text-xs text-zinc-400">
+                    {client.email && <p className="text-[12px] truncate" style={{ color: '#888780' }}>{client.email}</p>}
+                    <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>
                       {[client.city, client.postalCode].filter(Boolean).join(' ')}
                       {client._count.invoices > 0 && ` · ${client._count.invoices} facture${client._count.invoices > 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  <svg className="h-4 w-4 flex-shrink-0 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <button
+                    onClick={(e) => { e.preventDefault(); setActionMenuClient(client); }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors active:bg-zinc-100"
+                    style={{ color: '#C8C6C2' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="3" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="8" cy="13" r="1.2"/>
+                    </svg>
+                  </button>
                 </Link>
-                <div className="flex border-t border-zinc-100">
-                  <Link href={`/clients/${client.id}/edit`}
-                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-zinc-500 active:bg-zinc-50"
-                    style={{ borderRight: '0.5px solid #F0F0EE' }}>
-                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Modifier
-                  </Link>
-                  <button onClick={() => handleToggle(client.id)} disabled={actionId === client.id}
-                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-zinc-500 active:bg-zinc-50 disabled:opacity-40"
-                    style={{ borderRight: '0.5px solid #F0F0EE' }}>
-                    {client.isActive ? 'Archiver' : 'Réactiver'}
-                  </button>
-                  <button onClick={() => handleDelete(client.id, client.name)} disabled={actionId === client.id}
-                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium active:bg-zinc-50 disabled:opacity-40"
-                    style={{ color: '#DC2626' }}>
-                    Supprimer
-                  </button>
-                </div>
               </div>
             ))
+          )}
+          {actionMenuClient && (
+            <MobileActionSheet
+              open={!!actionMenuClient}
+              onClose={() => setActionMenuClient(null)}
+              title={actionMenuClient.name}
+              actions={[
+                {
+                  label: 'Voir le détail',
+                  icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>,
+                  onClick: () => router.push(`/clients/${actionMenuClient.id}`),
+                },
+                {
+                  label: 'Modifier',
+                  icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>,
+                  onClick: () => router.push(`/clients/${actionMenuClient.id}/edit`),
+                },
+                {
+                  label: actionMenuClient.isActive ? 'Archiver' : 'Réactiver',
+                  icon: actionMenuClient.isActive
+                    ? <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/></svg>
+                    : <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>,
+                  onClick: () => { handleToggle(actionMenuClient.id); },
+                  disabled: actionId === actionMenuClient.id,
+                },
+                {
+                  label: 'Supprimer',
+                  icon: <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+                  onClick: () => { handleDelete(actionMenuClient.id, actionMenuClient.name); },
+                  variant: 'danger',
+                  disabled: actionId === actionMenuClient.id,
+                },
+              ]}
+            />
           )}
         </div>
 
