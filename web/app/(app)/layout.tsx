@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AppNotification } from '@/lib/types';
 import { getActivePlan } from '@/lib/auth';
-import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '@/lib/notifications';
+import { apiGetNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead, apiGenerateNotifications } from '@/lib/notifications';
 import { apiGetBusiness } from '@/lib/settings';
 import UpgradeModal from '@/components/UpgradeModal';
 import SearchModal from '@/components/SearchModal';
@@ -187,7 +187,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   useEffect(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (!t) return;
-    apiGetNotifications(t).then(setNotifications).catch(() => {});
+    apiGenerateNotifications(t)
+      .catch(() => {})
+      .finally(() => { apiGetNotifications(t).then(setNotifications).catch(() => {}); });
     apiGetBusiness(t).then((b) => { if (b?.hasEmployees) setHasEmployees(true); }).catch(() => {});
   }, []);
 
