@@ -457,12 +457,12 @@ export default function ExpensesPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           {/* Period */}
-          <div className="flex gap-1 rounded-xl bg-zinc-100 p-1">
+          <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-full sm:w-fit">
             {(['month', 'year', 'all'] as const).map((p) => (
               <button key={p} onClick={() => setPeriod(p)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className={`flex-1 sm:flex-none rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   period === p ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
                 }`}>
                 {p === 'month' ? 'Ce mois' : p === 'year' ? 'Cette année' : 'Tout'}
@@ -471,7 +471,7 @@ export default function ExpensesPage() {
           </div>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative w-full sm:w-64">
             <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
               fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -479,7 +479,7 @@ export default function ExpensesPage() {
             </svg>
             <input type="text" placeholder="Description, fournisseur…" value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-64 rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
+              className="w-full rounded-lg border border-[#E5E4E0] bg-white py-2 pl-9 pr-3 text-sm placeholder-zinc-400 focus:border-[#378ADD] focus:outline-none focus:ring-2 focus:ring-[#E6F1FB]" />
           </div>
         </div>
 

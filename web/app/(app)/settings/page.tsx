@@ -838,12 +838,9 @@ function CategoriesTab({ token }: { token: string }) {
       {/* Sub-tabs */}
       <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
         {([['EXPENSE', 'Dépenses'], ['REVENUE', 'Revenus']] as const).map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setSubtab(id)}
+          <button key={id} onClick={() => setSubtab(id)}
             className="rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
-            style={subtab === id ? { background: '#FFFFFF', color: '#1a1a18' } : { color: '#888780' }}
-          >
+            style={subtab === id ? { background: '#FFFFFF', color: '#1a1a18' } : { color: '#888780' }}>
             {label}
           </button>
         ))}
@@ -1043,8 +1040,16 @@ export default function SettingsPage() {
         <p className="text-[12px] mt-0.5" style={{ color: '#888780' }}>Gérez votre profil et les informations de votre entreprise</p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
+      {/* Tab bar — select on mobile, pills on desktop */}
+      <select
+        className="sm:hidden w-full rounded-lg border px-3 py-2.5 text-[14px] font-medium appearance-none"
+        style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
+        value={tab}
+        onChange={(e) => setTab(e.target.value as TabId)}
+      >
+        {TABS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+      </select>
+      <div className="hidden sm:flex gap-1 rounded-md p-0.5 w-fit" style={{ background: '#EDEDEB' }}>
         {TABS.map((t) => (
           <button
             key={t.id}

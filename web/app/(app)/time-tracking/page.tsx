@@ -361,12 +361,12 @@ export default function TimeTrackingPage() {
         </select>
 
         {/* Billed filter */}
-        <div className="flex gap-1 rounded-md p-0.5" style={{ background: '#EDEDEB' }}>
+        <div className="flex gap-1 rounded-md p-0.5 w-full sm:w-fit" style={{ background: '#EDEDEB' }}>
           {([['all', 'Tout'], ['unbilled', 'Non facturé'], ['billed', 'Facturé']] as const).map(([v, l]) => (
             <button
               key={v}
               onClick={() => setBilledFilter(v)}
-              className="rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
+              className="flex-1 sm:flex-none rounded px-3 py-1.5 text-[12px] font-medium transition-colors"
               style={billedFilter === v ? { background: '#FFFFFF', color: '#1a1a18' } : { color: '#888780' }}
             >
               {l}

@@ -255,21 +255,30 @@ function ExpenseReportTab() {
   const [from, setFrom] = useState(firstDayOfMonth());
   const [to, setTo]     = useState(lastDayOfMonth());
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleDownload() {
+  async function handleDownload() {
     const t = tok();
     setLoading(true);
-    fetch(getExpenseReportPdfUrl(from, to), { headers: { Authorization: `Bearer ${t}` } })
-      .then((res) => res.blob())
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `note-de-frais-${from.slice(0, 7)}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      })
-      .finally(() => setLoading(false));
+    setError(null);
+    try {
+      const res = await fetch(getExpenseReportPdfUrl(from, to), { headers: { Authorization: `Bearer ${t}` } });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => `Erreur ${res.status}`);
+        throw new Error(msg || `Erreur ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `note-de-frais-${from.slice(0, 7)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur lors de la génération');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -303,6 +312,9 @@ function ExpenseReportTab() {
           </svg>
           {loading ? 'Génération…' : 'Télécharger le PDF'}
         </button>
+        {error && (
+          <p className="text-sm text-red-600 rounded-lg bg-red-50 px-3 py-2">{error}</p>
+        )}
       </div>
 
       {/* Shortcuts */}
@@ -425,10 +437,10 @@ export default function TaxReportsPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Header */}
-      <header className="border-b border-[#E5E4E0] bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="border-b border-[#E5E4E0] bg-white px-4 py-4 -mx-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-zinc-900">Fiscalité</h1>
             <p className="text-sm text-zinc-500">Déclarations fiscales &amp; notes de frais</p>
@@ -439,15 +451,25 @@ export default function TaxReportsPage() {
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Nouvelle déclaration
+              <span className="hidden sm:inline">Nouvelle déclaration</span>
+              <span className="sm:hidden">Nouveau</span>
             </button>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6 space-y-6">
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit">
+      <main className="space-y-4 sm:space-y-6">
+        {/* Tabs — select on mobile, pills on desktop */}
+        <select
+          className="sm:hidden w-full rounded-lg border px-3 py-2.5 text-[14px] font-medium appearance-none"
+          style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
+          value={tab}
+          onChange={(e) => setTab(e.target.value as 'declarations' | 'expense-reports')}
+        >
+          <option value="declarations">Déclarations fiscales</option>
+          <option value="expense-reports">Notes de frais</option>
+        </select>
+        <div className="hidden sm:flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit">
           {([
             { id: 'declarations',    label: 'Déclarations fiscales' },
             { id: 'expense-reports', label: 'Notes de frais' },
@@ -501,8 +523,19 @@ export default function TaxReportsPage() {
 
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* Status filter */}
-              <div className="flex gap-1 rounded-xl bg-zinc-100 p-1">
+              {/* Status filter — select on mobile */}
+              <select
+                className="sm:hidden rounded-lg border px-3 py-2 text-sm appearance-none"
+                style={{ background: '#FFFFFF', border: '0.5px solid #E5E4E0', color: '#1a1a18' }}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as TaxReportStatus | 'ALL')}
+              >
+                <option value="ALL">Tous</option>
+                {(['DRAFT', 'SUBMITTED', 'VALIDATED'] as const).map(s => (
+                  <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                ))}
+              </select>
+              <div className="hidden sm:flex gap-1 rounded-xl bg-zinc-100 p-1">
                 {(['ALL', 'DRAFT', 'SUBMITTED', 'VALIDATED'] as const).map((s) => (
                   <button key={s} onClick={() => setStatusFilter(s)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
