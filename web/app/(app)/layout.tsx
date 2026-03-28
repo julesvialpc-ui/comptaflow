@@ -104,6 +104,16 @@ const NAV_PILOTAGE = [
       </svg>
     ),
   },
+  {
+    href: '/documents',
+    label: 'Documents',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
 ];
 
 const NAV_EMPLOYEES = {
@@ -300,26 +310,6 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             {NAV_EMPLOYEES.label}
           </Link>
         )}
-
-        {/* Documents */}
-        {(() => {
-          const href = '/documents';
-          const active = isActive(href, pathname);
-          return (
-            <Link href={href} onClick={onNavClick}
-              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors"
-              style={active ? { background: '#E6F1FB', color: '#185FA5' } : { color: '#6B6868' }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F5F5F3'; }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = ''; }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Documents
-            </Link>
-          );
-        })()}
 
         {/* Assistant IA */}
         <div className="pt-3">
@@ -651,12 +641,15 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
   }, []);
 
   const secondaryNav = [
+    // Activité
+    { href: '/invoices', label: 'Factures', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
     { href: '/quotes', label: 'Devis', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    // Finance
     { href: '/revenues', label: 'Revenus', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><rect x="2" y="11" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg> },
     { href: '/expenses', label: 'Dépenses', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1.2"/></svg> },
     { href: '/time-tracking', label: 'Temps', pro: true, icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    // Pilotage
     { href: '/tax-reports', label: 'Rapports fiscaux', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M2 13 L6 7 L10 10 L14 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    { href: '/invoices', label: 'Factures', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
     { href: '/documents', label: 'Documents', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     ...(hasEmployees ? [{ href: '/employees', label: 'Mes employés', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><circle cx="10.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 13c0-2.21 2.015-4 4.5-4s4.5 1.79 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M11 9.2c1.5.4 2.7 1.8 2.7 3.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }] : []),
     { href: '/settings', label: 'Paramètres', icon: <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
