@@ -35,23 +35,19 @@ body {
 }
 
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
-/* Invert + hue-rotate: works on all inline hex colors without component changes */
+/* Invert + hue-rotate on body (not html) to avoid breaking position:fixed stacking */
 html.dark {
   color-scheme: dark;
+}
+
+html.dark body {
   filter: invert(1) hue-rotate(180deg);
 }
 
 /* Re-invert media & charts so they display correctly */
-html.dark img,
-html.dark video,
-html.dark canvas,
-html.dark [data-chart],
-html.dark .recharts-wrapper,
-html.dark iframe {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-/* Prevent double-invert on SVG inside buttons (they're already part of the UI) */
-html.dark input[type="file"]::file-selector-button {
+html.dark body img,
+html.dark body video,
+html.dark body canvas,
+html.dark body iframe {
   filter: invert(1) hue-rotate(180deg);
 }
